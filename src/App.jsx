@@ -414,7 +414,12 @@ function Hero() {
 
       <div className="relative z-10 text-center px-4 w-full max-w-7xl">
         <motion.div style={{ y }}>
-          <h1 className="text-[12vw] font-black text-white leading-[0.85] tracking-tighter mix-blend-difference mb-8">
+          {/* FIX: Added 'pr-4' or 'pl-4' to manually balance the text. 
+             If it looks too far left, use 'pl-4'. 
+             If it looks too far right, use 'pr-4'.
+             I've added 'pr-5' here to counteract the tracking-tighter pulling it left.
+          */}
+          <h1 className="text-[12vw] font-black text-white leading-[0.85] tracking-tighter mix-blend-difference mb-8 pr-5">
             {DATA.hero.first}<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-b from-gray-500 to-white">{DATA.hero.last}</span>
           </h1>
