@@ -61,7 +61,7 @@ const DATA = {
     },
     {
       id: 2,
-      year: "2024",
+      year: "2025",
       title: "The Acceleration",
       role: "Dual Enrollment Student",
       desc: "Accepted into Georgia State University (Summer) and Georgia Tech (Fall) for CS 1301. Started diving deep into Machine Learning and Neural Networks.",
