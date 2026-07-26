@@ -1,589 +1,610 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { createElement, useEffect, useState } from 'react';
+import { motion as Motion, useReducedMotion } from 'framer-motion';
 import {
-  motion,
-  useScroll,
-  useTransform,
-  useSpring as useMotionSpring,
-  useMotionValue,
-  AnimatePresence
-} from 'framer-motion';
-import Lenis from '@studio-freight/lenis';
-import {
-  Code2,
-  Cpu,
-  Zap,
-  Trophy,
-  User,
+  ArrowDownRight,
   ArrowUpRight,
+  Award,
+  BriefcaseBusiness,
+  Code2,
+  Download,
   Github,
+  GraduationCap,
+  HeartHandshake,
   Linkedin,
   Mail,
-  Terminal,
-  Briefcase,
-  GraduationCap,
-  Atom,
-  GitBranch,
-  Database,
-  Brain,
-  Layout,
-  Server,
-  Smartphone
+  MapPin,
+  Menu,
+  Moon,
+  Sparkles,
+  Sun,
+  Trophy,
+  Users,
+  X,
 } from 'lucide-react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import './App.css';
 
-// --- UTILS ---
-function cn(...inputs) {
-  return twMerge(clsx(inputs));
-}
+const SOCIALS = [
+  { label: 'GitHub', href: 'https://github.com/shreyasboddani', icon: Github },
+  { label: 'LinkedIn', href: 'https://linkedin.com/in/shreyas-boddani-15785834a', icon: Linkedin },
+  { label: 'Email', href: 'mailto:shreyasboddani@gmail.com', icon: Mail },
+];
 
-// --- DATA: THE ARCHIVE ---
-const DATA = {
-  hero: {
-    first: "SHREYAS",
-    last: "BODDANI",
-    role: "FULL STACK ENGINEER",
-    sub: "ARCHITECTING INTELLIGENCE",
-    location: "ATLANTA, GA"
+const NOW = [
+  {
+    icon: BriefcaseBusiness,
+    title: 'Summer intern',
+    org: 'CirrusLabs',
+    meta: 'Summer 2026 · Alpharetta, GA',
+    text: 'Building internal Python and React full-stack projects and contributing to AI research.',
+    tone: 'orange',
   },
-  about: {
-    bio: "I don't just write code; I engineer logic. A high school junior at North Forsyth, I operate at the intersection of Full-Stack Development and Artificial Intelligence. Whether it's dual-enrolling at Georgia Tech or prototyping 5-hour hackathon saves, I build systems that solve human problems.",
+  {
+    icon: Users,
+    title: 'Chapter president',
+    org: 'North Forsyth FBLA',
+    meta: '2026–27',
+    text: 'Leading the chapter after a year as VP of Community Service, with a focus on useful programs and a strong team culture.',
+    tone: 'green',
   },
-  timeline: [
-    {
-      id: 1,
-      year: "2023",
-      title: "The Origin",
-      role: "Boarding School Freshman",
-      desc: "Joined the CS Club & Innovation Workshop. While others slept, I was compiling my first Python scripts. This was the moment the hobby became a vocation.",
-      icon: Terminal,
-      color: "text-blue-400"
-    },
-    {
-      id: 2,
-      year: "2025",
-      title: "The Acceleration",
-      role: "Dual Enrollment Student",
-      desc: "Accepted into Georgia State University (Summer) and Georgia Tech (Fall) for CS 1301. Started diving deep into Machine Learning and Neural Networks.",
-      icon: GraduationCap,
-      color: "text-purple-400"
-    },
-    {
-      id: 3,
-      year: "2025",
-      title: "Leadership & Service",
-      role: "VP of Community Service",
-      desc: "Leading service initiatives for FBLA (North Forsyth) and Educo (Tutoring). Organized school supply drives and managed mentor matching for middle schoolers.",
-      icon: Briefcase,
-      color: "text-emerald-400"
-    },
-    {
-      id: 4,
-      year: "PRESENT",
-      title: "The Recognition",
-      role: "GHP State Nominee",
-      desc: "Nominated for the Governor's Honors Program in Computer Science. Currently building Mentics and scaling AI architectures.",
-      icon: Trophy,
-      color: "text-yellow-400"
-    }
-  ],
-  skills: [
-    { name: "React", icon: Atom, x: 0, y: -40, color: "text-blue-400" },
-    { name: "Python", icon: Terminal, x: 40, y: -20, color: "text-yellow-400" },
-    { name: "TensorFlow", icon: Brain, x: 40, y: 20, color: "text-orange-500" },
-    { name: "Flask", icon: Server, x: 0, y: 40, color: "text-white" },
-    { name: "Java", icon: Code2, x: -40, y: 20, color: "text-red-400" },
-    { name: "Git", icon: GitBranch, x: -40, y: -20, color: "text-gray-300" },
-    { name: "Next.js", icon: Layout, x: 25, y: -35, color: "text-white" },
-    { name: "Gemini", icon: Zap, x: -25, y: 35, color: "text-purple-400" },
-    { name: "SQL", icon: Database, x: -25, y: -35, color: "text-blue-300" }
-  ],
-  projects: [
-    {
-      id: "mentics",
-      title: "MENTICS",
-      subtitle: "AI COLLEGE PLANNER",
-      desc: "A full-stack platform fixing the broken admissions process. Uses Gemini AI to provide real-time mentorship and personalized roadmaps.",
-      tags: ["Flask", "React", "OAuth 2.0", "Gemini AI"],
-      link: "https://mentics.onrender.com/",
-      image: "/mentics.png",
-      color: "from-blue-600 to-cyan-400"
-    },
-    {
-      id: "saferoute",
-      title: "SAFEROUTE",
-      subtitle: "HACKATHON SPRINT",
-      desc: "Civilian survival routing engineered in 5.5 hours. Integrates OpenStreetMap and OSRM to calculate evacuation paths in real-time.",
-      tags: ["Python", "Tkinter", "OSRM API", "Hackathon"],
-      link: "https://github.com/shreyasboddani/SafeRoute",
-      image: "/saferoute.png",
-      color: "from-emerald-600 to-green-400"
-    },
-    {
-      id: "anime",
-      title: "ANIME ML",
-      subtitle: "NEURAL RECOMMENDER",
-      desc: "Teaching AI to understand Animw. A Content-Based Filtering engine using TF-IDF and Variational Autoencoders to find your next obsession.",
-      tags: ["TensorFlow", "TF-IDF", "Deep Learning"],
-      link: "https://anime-discovery-48yh.onrender.com/",
-      image: "/anime.png",
-      color: "from-purple-600 to-pink-400"
-    },
-    {
-      id: "stress",
-      title: "MIND METRICS",
-      subtitle: "STRESS PREDICTION",
-      desc: "90% accuracy ML pipeline identifying student stress factors using Random Forests and SVMs. Data science applied to wellness.",
-      tags: ["Scikit-Learn", "SVM", "Pandas"],
-      link: "https://www.kaggle.com/code/shreyasboddani/shreyas-student-stress-monitoring-ml-project",
-      image: "/ml.png",
-      color: "from-red-600 to-orange-400"
-    }
-  ]
-};
+  {
+    icon: HeartHandshake,
+    title: 'Co-president',
+    org: 'Educo',
+    meta: '2026–present',
+    text: 'Helping run a student tutoring organization after serving as a tutor and VP of Community Service.',
+    tone: 'lavender',
+  },
+  {
+    icon: Sparkles,
+    title: 'Co-founder',
+    org: 'LearnAI Forsyth',
+    meta: '2026–present',
+    text: 'Co-leading a student team that runs free AI workshops and builds practical AI tools for Forsyth County businesses and nonprofits.',
+    link: 'https://learnai-forsyth.vercel.app/',
+    linkLabel: 'Explore LearnAI Forsyth',
+    tone: 'yellow',
+  },
+  {
+    icon: GraduationCap,
+    title: 'CS ambassador',
+    org: 'Forsyth County Schools',
+    meta: '2026–present',
+    text: 'Representing North Forsyth High School and the county’s computer science pathway.',
+    tone: 'blue',
+  },
+];
 
-// --- COMPONENT: THE PRELOADER (RESTORED) ---
-function Preloader({ onComplete }) {
-  const [count, setCount] = useState(0);
+const PROJECTS = [
+  {
+    name: 'Mentics',
+    type: 'AI college planning platform',
+    description: 'A full-stack product that turns college goals into practical roadmaps, progress tracking, and AI-guided support.',
+    tags: ['React', 'Flask', 'Gemini AI', 'OAuth 2.0'],
+    image: '/mentics.png',
+    href: 'https://mentics.onrender.com/',
+    accent: 'violet',
+  },
+  {
+    name: 'SafeRoute',
+    type: 'Hackathon prototype',
+    description: 'A civilian safety simulation with danger zones and real-time evacuation routing, built in 5.5 hours.',
+    tags: ['Python', 'Tkinter', 'OpenStreetMap', 'OSRM'],
+    image: '/saferoute.png',
+    href: 'https://github.com/shreyasboddani/SafeRoute',
+    accent: 'moss',
+  },
+  {
+    name: 'Anime Discovery',
+    type: 'ML recommender',
+    description: 'A recommendation engine combining content-based filtering, custom heuristics, and autoencoders.',
+    tags: ['TensorFlow', 'TF-IDF', 'Pandas'],
+    image: '/anime.png',
+    href: 'https://anime-discovery-48yh.onrender.com/',
+    accent: 'berry',
+  },
+  {
+    name: 'Mind Metrics',
+    type: 'Student wellness ML',
+    description: 'A machine-learning pipeline that predicts student stress at roughly 90% accuracy and surfaces key factors.',
+    tags: ['Scikit-learn', 'SVM', 'Random Forest'],
+    image: '/ml.png',
+    href: 'https://www.kaggle.com/code/shreyasboddani/shreyas-student-stress-monitoring-ml-project',
+    accent: 'coral',
+  },
+];
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCount((prev) => {
-        if (prev >= 100) {
-          clearInterval(timer);
-          setTimeout(onComplete, 800);
-          return 100;
-        }
-        return prev + 1;
-      });
-    }, 20);
-    return () => clearInterval(timer);
-  }, []);
+const TOOLKIT = [
+  'Python', 'Java', 'JavaScript', 'React', 'Flask', 'HTML & CSS',
+  'Tailwind CSS', 'TensorFlow', 'scikit-learn', 'Pandas', 'SQLite',
+  'REST APIs', 'OAuth 2.0', 'Git & GitHub',
+];
+
+const LEARNING = [
+  {
+    school: 'North Forsyth High School',
+    detail: 'Class of 2027 · Cumming, Georgia',
+  },
+  {
+    school: 'Georgia Institute of Technology',
+    detail: 'Dual enrollment · CS 1301 · Fall 2025',
+  },
+  {
+    school: 'Georgia State University',
+    detail: 'Additional dual-enrollment study',
+  },
+  {
+    school: 'The McCallie School',
+    detail: 'Student · 2023–24',
+  },
+];
+
+const JOURNEY = [
+  {
+    chapter: '01',
+    period: '2023–24',
+    title: 'Curiosity became direction.',
+    text: 'At McCallie, computer science stopped feeling like just another class. It became the thing I wanted to keep doing after the assignment was over.',
+  },
+  {
+    chapter: '02',
+    period: '2024–25',
+    title: 'I found the people side.',
+    text: 'At North Forsyth, I joined FBLA and Educo, started tutoring, and learned that building trust and building software have more in common than I expected.',
+  },
+  {
+    chapter: '03',
+    period: '2025–26',
+    title: 'Ideas started shipping.',
+    text: 'Georgia Tech dual enrollment deepened the fundamentals while projects like Mentics and SafeRoute gave me a reason to apply them under real constraints.',
+  },
+  {
+    chapter: '04',
+    period: 'Now',
+    title: 'The scope keeps growing.',
+    text: 'I’m leading FBLA and Educo, co-building LearnAI Forsyth, learning inside a professional engineering team, and getting more intentional about the problems I choose.',
+  },
+];
+
+function Reveal({ children, className = '', delay = 0 }) {
+  const reduceMotion = useReducedMotion();
 
   return (
-    <motion.div
-      className="fixed inset-0 z-[9999] bg-[#050505] flex flex-col items-center justify-center font-mono text-cyan-500"
-      exit={{ y: "-100%", transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] } }}
+    <Motion.div
+      className={className}
+      initial={reduceMotion ? false : { opacity: 0, y: 28 }}
+      whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: 0.65, delay, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="w-64 mb-4">
-        <div className="flex justify-between text-xs mb-2">
-          <span>SYSTEM_BOOT</span>
-          <span>{count}%</span>
-        </div>
-        <div className="h-1 w-full bg-cyan-900 rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-cyan-500"
-            style={{ width: `${count}%` }}
-          />
-        </div>
-      </div>
-      <div className="h-4 text-xs text-cyan-700">
-        {count < 30 && "INITIALIZING KERNEL..."}
-        {count >= 30 && count < 60 && "LOADING MODULES: [AI, REACT, FLASK]..."}
-        {count >= 60 && count < 90 && "ESTABLISHING NEURAL LINK..."}
-        {count >= 90 && "ACCESS GRANTED."}
-      </div>
-    </motion.div>
+      {children}
+    </Motion.div>
   );
 }
 
-// --- COMPONENT: GRAIN OVERLAY (RESTORED) ---
-function Grain() {
+function Nav({ theme, onToggleTheme }) {
+  const [open, setOpen] = useState(false);
+
+  const close = () => setOpen(false);
+
   return (
-    <div className="fixed inset-0 pointer-events-none z-[50] opacity-20 mix-blend-overlay">
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+    <header className="site-header">
+      <a className="brand" href="#top" aria-label="Shreyas Boddani, home" onClick={close}>
+        <span>SB</span>
+        <span className="brand-dot" aria-hidden="true" />
+      </a>
+
+      <div className="nav-actions">
+        <nav className={open ? 'nav-links is-open' : 'nav-links'} aria-label="Primary navigation">
+          <a href="#about" onClick={close}>About</a>
+          <a href="#journey" onClick={close}>Journey</a>
+          <a href="#now" onClick={close}>Now</a>
+          <a href="#work" onClick={close}>Work</a>
+          <a href="#contact" onClick={close}>Contact</a>
+          <a className="resume-link" href="/shreyas-resume.pdf" target="_blank" rel="noreferrer" onClick={close}>
+            Resume <Download size={15} />
+          </a>
+        </nav>
+
+        <button
+          className="theme-toggle"
+          type="button"
+          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+          onClick={onToggleTheme}
+        >
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+
+        <button
+          className="menu-button"
+          type="button"
+          aria-label={open ? 'Close navigation' : 'Open navigation'}
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+        >
+          {open ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function SocialLinks() {
+  return (
+    <div className="social-links" aria-label="Social links">
+      {SOCIALS.map((social) => (
+        <a key={social.label} href={social.href} target={social.href.startsWith('mailto:') ? undefined : '_blank'} rel="noreferrer">
+          {createElement(social.icon, { size: 17 })}
+          <span>{social.label}</span>
+        </a>
+      ))}
     </div>
   );
 }
 
-// --- COMPONENT: INTERACTIVE MAGNETIC CURSOR ---
-function CustomCursor() {
-  const cursorRef = useRef(null);
-  const [mouseState, setMouseState] = useState("default"); // default, text, card
-
-  // Mouse position
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  // Smooth spring physics for the cursor
-  const springConfig = { damping: 25, stiffness: 700 };
-  const cursorX = useMotionSpring(mouseX, springConfig);
-  const cursorY = useMotionSpring(mouseY, springConfig);
-
-  useEffect(() => {
-    const moveMouse = (e) => {
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
-
-      // Check what we are hovering
-      const target = e.target;
-      const isText = target.tagName === 'P' || target.tagName === 'H1' || target.tagName === 'H2' || target.tagName === 'H3' || target.tagName === 'SPAN';
-      const isLink = target.tagName === 'A' || target.tagName === 'BUTTON' || target.closest('a') || target.closest('button');
-      const isCard = target.closest('.project-card') || target.closest('.skill-node');
-
-      if (isCard) setMouseState("card");
-      else if (isLink) setMouseState("link");
-      else if (isText) setMouseState("text");
-      else setMouseState("default");
-    };
-
-    window.addEventListener("mousemove", moveMouse);
-    return () => window.removeEventListener("mousemove", moveMouse);
-  }, []);
-
-  const variants = {
-    default: { height: 16, width: 16, opacity: 1, backgroundColor: "#06b6d4", mixBlendMode: "normal" },
-    text: { height: 60, width: 60, opacity: 1, backgroundColor: "#ffffff", mixBlendMode: "difference" },
-    link: { height: 40, width: 40, opacity: 1, backgroundColor: "#06b6d4", mixBlendMode: "difference", scale: 1.2 },
-    card: { height: 80, width: 80, opacity: 0.5, backgroundColor: "transparent", borderWidth: "2px", borderColor: "#06b6d4", mixBlendMode: "normal" }
-  };
-
-  return (
-    <motion.div
-      className="fixed top-0 left-0 z-[100] pointer-events-none rounded-full flex items-center justify-center hidden md:flex"
-      style={{
-        translateX: cursorX,
-        translateY: cursorY,
-        x: "-50%",
-        y: "-50%"
-      }}
-      variants={variants}
-      animate={mouseState}
-    >
-      {mouseState === 'card' && <div className="w-1 h-1 bg-cyan-400 rounded-full" />}
-    </motion.div>
-  );
-}
-
-// --- COMPONENT: TECH-TREE TIMELINE (NEON SPINE) ---
-function TimelineSection() {
-  const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start end", "end start"] });
-  const scaleY = useTransform(scrollYProgress, [0, 1], [0, 1]);
-
-  return (
-    <section ref={containerRef} className="py-40 bg-[#050505] relative overflow-hidden">
-      <div className="max-w-5xl mx-auto px-6 relative">
-
-        <div className="text-center mb-24">
-          <h2 className="text-4xl md:text-7xl font-black text-white mb-4 tracking-tighter">THE CHRONICLES</h2>
-          <p className="text-gray-500 font-mono text-sm">/// INITIALIZING HISTORICAL DATA</p>
-        </div>
-
-        {/* Central Neon Spine */}
-        <div className="absolute left-6 md:left-1/2 top-32 bottom-0 w-[2px] bg-white/10 origin-top">
-          <motion.div style={{ scaleY }} className="w-full h-full bg-cyan-500 origin-top shadow-[0_0_20px_rgba(6,182,212,0.8)]" />
-        </div>
-
-        <div className="relative space-y-24">
-          {DATA.timeline.map((item, idx) => (
-            <TimelineItem key={item.id} item={item} index={idx} />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function TimelineItem({ item, index }) {
-  const isEven = index % 2 === 0;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-100px" }}
-      className={cn("relative flex items-center md:justify-between pl-16 md:pl-0", isEven ? "md:flex-row" : "md:flex-row-reverse")}
-    >
-      {/* Node (The "Joint") */}
-      <div className="absolute left-6 md:left-1/2 -translate-x-1/2 w-4 h-4 bg-[#050505] border-2 border-cyan-500 rounded-full z-10 shadow-[0_0_15px_rgba(6,182,212,1)]">
-        <div className="absolute inset-0 bg-cyan-400 animate-ping rounded-full opacity-20" />
-      </div>
-
-      {/* Content Card */}
-      <div className={cn("w-full md:w-[45%]", isEven ? "text-left" : "md:text-right")}>
-        <div className="group relative bg-white/5 border border-white/10 p-8 rounded-xl overflow-hidden hover:border-cyan-500/50 transition-colors duration-500">
-
-          {/* Hover Glow */}
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-          <div className={cn("flex items-center gap-4 mb-4", !isEven && "md:flex-row-reverse")}>
-            <div className={cn("p-3 rounded-lg bg-white/5", item.color)}>
-              <item.icon size={20} />
-            </div>
-            <span className="font-mono text-cyan-500 text-sm tracking-widest">{item.year}</span>
-          </div>
-
-          <h3 className="text-2xl font-bold text-white mb-2 relative z-10">{item.title}</h3>
-          <h4 className="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider relative z-10">{item.role}</h4>
-          <p className="text-gray-400 text-sm leading-relaxed relative z-10">
-            {item.desc}
-          </p>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// --- COMPONENT: POP-OUT RADAR ---
-function RadarSection() {
-  return (
-    <section className="py-32 px-4 bg-[#080808] relative overflow-hidden border-t border-white/5">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-
-        <div className="order-2 lg:order-1 relative z-10">
-          <h2 className="text-cyan-500 font-mono text-sm tracking-widest mb-6">// ARSENAL</h2>
-          <h3 className="text-5xl md:text-7xl font-black text-white mb-8 tracking-tighter">
-            TECHNICAL<br />PROFICIENCY
-          </h3>
-          <p className="text-gray-400 text-lg leading-relaxed max-w-lg mb-8">
-            My stack is built for speed and intelligence. Hover over the nodes to analyze the core technologies powering my applications.
-          </p>
-        </div>
-
-        <div className="order-1 lg:order-2 relative aspect-square flex items-center justify-center">
-          {/* Background Grid Elements */}
-          <div className="absolute inset-0 border border-white/5 rounded-full" />
-          <div className="absolute inset-[25%] border border-white/5 rounded-full" />
-          <div className="absolute inset-[50%] border border-white/5 rounded-full" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(6,182,212,0.1)_0%,transparent_70%)]" />
-
-          {/* Radar Sweep */}
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,transparent_0deg,rgba(6,182,212,0.1)_360deg)]"
-          />
-
-          {/* Skill Nodes */}
-          {DATA.skills.map((skill, i) => (
-            <SkillNode key={skill.name} skill={skill} index={i} />
-          ))}
-
-          {/* Center Core */}
-          <div className="absolute w-12 h-12 bg-black border border-cyan-500 rounded-full flex items-center justify-center z-20 shadow-[0_0_30px_rgba(6,182,212,0.4)]">
-            <Code2 size={20} className="text-cyan-500" />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SkillNode({ skill, index }) {
-  // Position calculation based on x/y percentages from DATA
-  return (
-    <motion.div
-      className="absolute skill-node group"
-      style={{ left: `${50 + skill.x}%`, top: `${50 + skill.y}%` }}
-      initial={{ scale: 0, opacity: 0 }}
-      whileInView={{ scale: 1, opacity: 1 }}
-      transition={{ delay: index * 0.1, type: "spring" }}
-    >
-      <div className="relative flex items-center justify-center">
-        {/* The Node Dot */}
-        <div className="w-3 h-3 bg-white rounded-full transition-all duration-300 group-hover:scale-[3] group-hover:bg-cyan-500 shadow-[0_0_10px_white]" />
-
-        {/* The Pop-out Icon (Hidden by default, scales up on hover) */}
-        <div className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transform scale-0 group-hover:scale-100 transition-all duration-300 z-50">
-          <skill.icon size={24} className="text-black" />
-        </div>
-
-        {/* Tooltip Card */}
-        <div className="absolute top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 w-max z-40">
-          <div className="bg-black/90 border border-cyan-500/30 px-4 py-2 rounded-lg backdrop-blur-md">
-            <span className={cn("text-sm font-bold block", skill.color)}>{skill.name}</span>
-          </div>
-          {/* Connector Line */}
-          <div className="w-[1px] h-4 bg-cyan-500/50 absolute -top-4 left-1/2 -translate-x-1/2" />
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// --- COMPONENT: HERO ---
 function Hero() {
-  const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 500], [0, 200]);
-
   return (
-    <section className="h-screen relative flex items-center justify-center overflow-hidden bg-[#050505]">
-      {/* Background Elements */}
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none mix-blend-overlay" />
-      <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none animate-pulse" />
-
-      <div className="relative z-10 text-center px-4 w-full max-w-7xl">
-        <motion.div style={{ y }}>
-          {/* FIX: Added 'pr-4' or 'pl-4' to manually balance the text. 
-             If it looks too far left, use 'pl-4'. 
-             If it looks too far right, use 'pr-4'.
-             I've added 'pr-5' here to counteract the tracking-tighter pulling it left.
-          */}
-          <h1 className="text-[12vw] font-black text-white leading-[0.85] tracking-tighter mix-blend-difference mb-8 pr-5">
-            {DATA.hero.first}<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-b from-gray-500 to-white">{DATA.hero.last}</span>
-          </h1>
-        </motion.div>
-
-        <div className="flex flex-col items-center gap-6">
-          <div className="flex items-center gap-4 text-cyan-400">
-            <div className="h-[1px] w-12 bg-cyan-900" />
-            <p className="font-mono text-sm tracking-[0.3em] uppercase">{DATA.hero.role}</p>
-            <div className="h-[1px] w-12 bg-cyan-900" />
-          </div>
-
-          <div className="flex gap-6 mt-8">
-            <SocialBtn href="https://github.com/shreyasboddani" icon={Github} />
-            <SocialBtn href="https://linkedin.com/in/shreyas-boddani-15785834a" icon={Linkedin} />
-            <SocialBtn href="mailto:shreyasboddani@gmail.com" icon={Mail} />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SocialBtn({ href, icon: Icon }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="p-4 rounded-full border border-white/10 bg-white/5 hover:bg-white hover:text-black hover:scale-110 transition-all duration-300"
-    >
-      <Icon size={20} />
-    </a>
-  );
-}
-
-// --- COMPONENT: PROJECTS ---
-function Projects() {
-  return (
-    <section className="py-32 px-4 bg-[#0a0a0a]">
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-6xl md:text-9xl font-black text-[#1a1a1a] mb-20 tracking-tighter">
-          WORKS
-        </h2>
-        <div className="flex flex-col gap-32">
-          {DATA.projects.map((project, i) => (
-            <ProjectCard key={project.id} project={project} index={i} />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ProjectCard({ project, index }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 100 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-10%" }}
-      transition={{ duration: 0.8 }}
-      className="project-card group relative grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"
-    >
-      <div className={cn("lg:col-span-5 order-2", index % 2 === 1 ? "lg:order-2" : "lg:order-1")}>
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-xs font-bold px-3 py-1 rounded-full border border-white/20 text-gray-300">0{index + 1}</span>
-          <span className="text-xs font-mono text-cyan-500 uppercase">{project.subtitle}</span>
-        </div>
-
-        <h3 className="text-4xl md:text-6xl font-bold text-white mb-6 group-hover:text-cyan-400 transition-colors">
-          {project.title}
-        </h3>
-
-        <p className="text-gray-400 text-lg leading-relaxed mb-8">
-          {project.desc}
+    <section className="hero" id="top">
+      <div className="hero-copy">
+        <p className="eyebrow"><span /> Full-stack & ML developer · Student leader</p>
+        <p className="hero-hello">Hi, I’m</p>
+        <h1 aria-label="Shreyas Boddani">
+          <span>SHREYAS</span>
+          <span className="hero-last-name">BODDANI</span>
+        </h1>
+        <p className="hero-tagline">Developer, student leader, and professional problem-noticer.</p>
+        <p className="hero-intro">
+          I like code because it turns “someone should fix that” into “here, try this.”
+          I’m a high school senior building useful software, leading student teams,
+          and learning how good ideas become things people actually care about.
         </p>
-
-        <div className="flex flex-wrap gap-2 mb-8">
-          {project.tags.map(tag => (
-            <span key={tag} className="text-xs font-mono text-gray-500 border border-white/10 px-2 py-1 rounded">#{tag}</span>
-          ))}
+        <div className="hero-actions">
+          <a className="button button-dark" href="#work">
+            See what I’ve built <ArrowDownRight size={18} />
+          </a>
+          <a className="text-link" href="#journey">
+            Get to know me <ArrowDownRight size={17} />
+          </a>
         </div>
-
-        <a href={project.link} target="_blank" className="inline-flex items-center gap-2 text-white border-b border-white pb-1 hover:text-cyan-400 hover:border-cyan-400 transition-all">
-          VIEW PROJECT <ArrowUpRight size={16} />
-        </a>
+        <SocialLinks />
       </div>
 
-      <div className={cn("lg:col-span-7 h-[400px] md:h-[600px] relative rounded-3xl overflow-hidden order-1 border border-white/10 group-hover:border-cyan-500/30 transition-colors", index % 2 === 1 ? "lg:order-1" : "lg:order-2")}>
-        <div className={cn("absolute inset-0 opacity-20 bg-gradient-to-br", project.color)} />
-        <img
-          src={project.image}
-          alt={project.title}
-          className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-out"
-          onError={(e) => e.target.style.display = 'none'}
-        />
-        {/* Cool Wireframe overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
-      </div>
-    </motion.div>
+      <figure className="hero-portrait">
+        <div className="portrait-image-wrap">
+          <img src="/shreyas-headshot.png" alt="Shreyas Boddani" />
+        </div>
+        <figcaption className="portrait-caption">
+          <div>
+            <span>Shreyas Boddani</span>
+            <strong>Full-stack & ML developer</strong>
+          </div>
+          <span className="portrait-class">Class of ’27</span>
+        </figcaption>
+        <div className="portrait-note">Build with people in mind.</div>
+        <div className="portrait-location"><MapPin size={14} /> Cumming, Georgia</div>
+      </figure>
+    </section>
   );
 }
 
-// --- COMPONENT: FOOTER ---
-function Footer() {
+function ProofStrip() {
   return (
-    <footer className="relative bg-[#050505] pt-32 pb-12 border-t border-white/10 z-10">
-      <div className="max-w-7xl mx-auto px-6 flex flex-col items-center text-center">
-        <h2 className="text-[10vw] font-black leading-none text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-800 mb-8">
-          IMPOSSIBLE?
-        </h2>
-        <a href="mailto:shreyasboddani@gmail.com" className="px-8 py-4 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform mb-20">
-          START A CONVERSATION
-        </a>
-        <div className="w-full flex flex-col md:flex-row justify-between items-center text-xs font-mono text-gray-600 border-t border-white/10 pt-8">
-          <p>© 2026 SHREYAS BODDANI</p>
-          <p>ATLANTA, GA</p>
+    <section className="proof-strip" aria-label="A few quick facts">
+      <div>
+        <strong>’27</strong>
+        <span>North Forsyth</span>
+      </div>
+      <div>
+        <strong>GT</strong>
+        <span>CS 1301 dual enrollment</span>
+      </div>
+      <div>
+        <strong>4</strong>
+        <span>Shipped projects across full-stack and ML</span>
+      </div>
+      <div>
+        <strong>20+</strong>
+        <span>Hours spent tutoring students</span>
+      </div>
+    </section>
+  );
+}
+
+function About() {
+  return (
+    <section className="section about" id="about">
+      <Reveal className="section-heading">
+        <p className="eyebrow"><span /> More than the GitHub graph</p>
+        <h2>Technology is the tool.<br />People are the point.</h2>
+      </Reveal>
+
+      <div className="about-grid">
+        <Reveal className="about-lead">
+          <p>
+            I’m an aspiring computer scientist drawn to the overlap between software,
+            business, and real human problems. I like building from zero: finding the
+            messy part, asking better questions, and turning it into something people can use.
+          </p>
+        </Reveal>
+        <Reveal className="about-details" delay={0.08}>
+          <p>
+            That same instinct shows up outside code. I lead teams in FBLA and Educo,
+            tutor younger students, and co-founded LearnAI Forsyth to make technical ideas
+            feel less intimidating. Good work, to me, is clear, generous, and built to matter.
+          </p>
+          <div className="personal-note">
+            <span>Also in the mix</span>
+            <p>Squash, business strategy, presenting ideas, and learning whatever the next project demands.</p>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function Journey() {
+  return (
+    <section className="section journey" id="journey">
+      <Reveal className="section-heading heading-row">
+        <div>
+          <p className="eyebrow"><span /> The journey so far</p>
+          <h2>No master plan.<br />Just a useful next step.</h2>
         </div>
+        <p className="heading-note">
+          I didn’t wake up with a personal brand. I kept following the work that made me curious and the people I could help.
+        </p>
+      </Reveal>
+
+      <div className="journey-grid">
+        {JOURNEY.map((item, index) => (
+          <Reveal className="journey-chapter" delay={index * 0.05} key={item.chapter}>
+            <div className="chapter-top">
+              <span>{item.chapter}</span>
+              <span>{item.period}</span>
+            </div>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function NowSection() {
+  return (
+    <section className="section now-section" id="now">
+      <Reveal className="section-heading heading-row">
+        <div>
+          <p className="eyebrow eyebrow-light"><span /> What I’m doing now</p>
+          <h2>Building. Leading.<br />Still learning.</h2>
+        </div>
+        <p className="heading-note">A current snapshot of the work, teams, and communities I care about.</p>
+      </Reveal>
+
+      <div className="now-grid">
+        {NOW.map((item, index) => (
+          <Reveal className={`now-card tone-${item.tone}`} delay={index * 0.05} key={`${item.org}-${item.title}`}>
+            <div className="now-icon"><item.icon size={22} /></div>
+            <span className="now-meta">{item.meta}</span>
+            <h3>{item.title}</h3>
+            <h4>{item.org}</h4>
+            <p>{item.text}</p>
+            {item.link && (
+              <a className="now-card-link" href={item.link} target="_blank" rel="noreferrer">
+                {item.linkLabel} <ArrowUpRight size={16} />
+              </a>
+            )}
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProjectCard({ project, featured = false }) {
+  return (
+    <article className={`project-card project-${project.accent} ${featured ? 'project-featured' : ''}`}>
+      <a href={project.href} target="_blank" rel="noreferrer" aria-label={`Open ${project.name}`}>
+        <div className="project-image-wrap">
+          <img src={project.image} alt={`${project.name} interface`} loading="lazy" />
+          <span className="project-open"><ArrowUpRight size={20} /></span>
+        </div>
+        <div className="project-copy">
+          <div>
+            <p className="project-type">{project.type}</p>
+            <h3>{project.name}</h3>
+          </div>
+          <p className="project-description">{project.description}</p>
+          <div className="tag-list">
+            {project.tags.map((tag) => <span key={tag}>{tag}</span>)}
+          </div>
+        </div>
+      </a>
+    </article>
+  );
+}
+
+function Work() {
+  return (
+    <section className="section work" id="work">
+      <Reveal className="section-heading heading-row">
+        <div>
+          <p className="eyebrow"><span /> Selected work</p>
+          <h2>Projects with<br />a reason to exist.</h2>
+        </div>
+        <p className="heading-note dark-note">
+          Four builds across education, public safety, recommendations, and student wellness.
+        </p>
+      </Reveal>
+
+      <div className="projects-grid">
+        <Reveal className="project-feature-wrap"><ProjectCard project={PROJECTS[0]} featured /></Reveal>
+        {PROJECTS.slice(1).map((project, index) => (
+          <Reveal key={project.name} delay={index * 0.05}><ProjectCard project={project} /></Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Learning() {
+  return (
+    <section className="section learning">
+      <div className="learning-grid">
+        <Reveal className="education-column">
+          <p className="eyebrow"><span /> Education</p>
+          <h2>Learning in<br />more than one room.</h2>
+          <div className="learning-list">
+            {LEARNING.map((item) => (
+              <div key={item.school}>
+                <h3>{item.school}</h3>
+                <p>{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </Reveal>
+
+        <Reveal className="toolkit-card" delay={0.08}>
+          <div className="toolkit-heading">
+            <Code2 size={24} />
+            <div>
+              <p className="eyebrow"><span /> Toolkit</p>
+              <h2>What I build with</h2>
+            </div>
+          </div>
+          <div className="toolkit-list">
+            {TOOLKIT.map((tool) => <span key={tool}>{tool}</span>)}
+          </div>
+          <p className="toolkit-footnote">Tools change. Clear thinking travels well.</p>
+        </Reveal>
+      </div>
+
+      <div className="credentials-grid">
+        <Reveal className="credential-card credential-awards">
+          <Trophy size={25} />
+          <p className="credential-kicker">Recognition</p>
+          <h3>2026 Georgia FBLA State Champion</h3>
+          <p>Social Media Strategies · also 4th at the FBLA National Leadership Conference.</p>
+        </Reveal>
+        <Reveal className="credential-card" delay={0.06}>
+          <Award size={25} />
+          <p className="credential-kicker">Academic recognition</p>
+          <h3>GHP State Semifinalist</h3>
+          <p>Computer Science</p>
+        </Reveal>
+        <Reveal className="credential-card" delay={0.12}>
+          <Award size={25} />
+          <p className="credential-kicker">Certification</p>
+          <h3>IT Specialist</h3>
+          <p>Software Development</p>
+        </Reveal>
+        <Reveal className="credential-card" delay={0.18}>
+          <Award size={25} />
+          <p className="credential-kicker">Certification</p>
+          <h3>CIW Associate</h3>
+          <p>Website Development</p>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function Future() {
+  return (
+    <section className="section future" id="future">
+      <Reveal className="future-intro">
+        <p className="eyebrow"><span /> What’s next</p>
+        <h2>I’m building toward work that is technically strong and genuinely useful.</h2>
+        <p>
+          I want to study computer science, keep shipping products with real users,
+          and grow into the kind of engineer who understands people and business as deeply as technology.
+        </p>
+      </Reveal>
+
+      <div className="future-grid">
+        <Reveal className="future-principles">
+          <div>
+            <span>01</span>
+            <h3>Learn deeply</h3>
+            <p>Build the fundamentals, stay curious, and avoid confusing familiarity with understanding.</p>
+          </div>
+          <div>
+            <span>02</span>
+            <h3>Build for people</h3>
+            <p>Make products that solve a real problem—and are clear enough that someone wants to use them.</p>
+          </div>
+          <div>
+            <span>03</span>
+            <h3>Lead well</h3>
+            <p>Create teams where people feel trusted, do their best work, and know why the work matters.</p>
+          </div>
+        </Reveal>
+
+        <Reveal className="looking-card" delay={0.08}>
+          <p className="aside-label">Right now, I’m looking for</p>
+          <h3>Good problems and good people.</h3>
+          <p>
+            Internships where I can contribute, mentors who will challenge my thinking,
+            and collaborators who care more about making something useful than sounding impressive.
+          </p>
+          <a href="mailto:shreyasboddani@gmail.com">Start a conversation <ArrowUpRight size={17} /></a>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function Contact() {
+  return (
+    <footer className="contact" id="contact">
+      <div className="contact-spark" aria-hidden="true">✦</div>
+      <Reveal>
+        <p className="eyebrow eyebrow-light"><span /> Let’s make something useful</p>
+        <h2>Have a problem worth<br /><em>building for?</em></h2>
+        <p className="contact-copy">
+          I’m always happy to talk about software, AI, student-led ideas, internships,
+          or the ambitious thing you’re not quite sure how to start.
+        </p>
+        <a className="button button-light" href="mailto:shreyasboddani@gmail.com">
+          shreyasboddani@gmail.com <ArrowUpRight size={18} />
+        </a>
+      </Reveal>
+
+      <div className="footer-bottom">
+        <div>
+          <strong>Shreyas Boddani</strong>
+          <span>Built with curiosity in Georgia.</span>
+        </div>
+        <SocialLinks />
+        <span>© 2026</span>
       </div>
     </footer>
   );
 }
 
-// --- MAIN APP ---
-function App() {
-  const [loading, setLoading] = useState(true);
+export default function App() {
+  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'light');
 
-  // Smooth Scroll
   useEffect(() => {
-    const lenis = new Lenis();
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-    requestAnimationFrame(raf);
-  }, []);
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   return (
-    <>
-      <AnimatePresence mode='wait'>
-        {loading && <Preloader onComplete={() => setLoading(false)} />}
-      </AnimatePresence>
-
-      {!loading && (
-        <div className="bg-[#050505] min-h-screen text-white font-sans selection:bg-cyan-500 selection:text-black cursor-none">
-          <Grain />
-          <CustomCursor />
-          <nav className="fixed top-0 left-0 w-full p-6 z-40 flex justify-between items-center mix-blend-difference">
-            <span className="font-black text-xl tracking-tighter">SB.</span>
-            <a href="/resume.pdf" className="text-xs font-bold border border-white px-4 py-2 rounded-full hover:bg-white hover:text-black transition-colors cursor-none">RESUME</a>
-          </nav>
-
-          <main>
-            <Hero />
-            <TimelineSection />
-            <RadarSection />
-            <Projects />
-          </main>
-
-          <Footer />
-        </div>
-      )}
-    </>
+    <div className="site-shell">
+      <Nav theme={theme} onToggleTheme={() => setTheme((value) => value === 'dark' ? 'light' : 'dark')} />
+      <main>
+        <Hero />
+        <ProofStrip />
+        <About />
+        <Journey />
+        <NowSection />
+        <Work />
+        <Learning />
+        <Future />
+      </main>
+      <Contact />
+    </div>
   );
 }
-
-export default App;

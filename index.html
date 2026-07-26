@@ -3,9 +3,22 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="/favicon.jpg" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=6" />
+  <link rel="alternate icon" href="/favicon.ico?v=6" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/sb-touch-icon-180.png?v=6" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>shreyas-portfolio</title>
+  <meta name="theme-color" content="#f7f7f4" />
+  <meta name="description" content="Shreyas Boddani is a full-stack and machine-learning developer, student leader, and community builder based in Georgia." />
+  <meta property="og:title" content="Shreyas Boddani — Developer & Student Leader" />
+  <meta property="og:description" content="Useful software, thoughtful leadership, and a lot of curiosity." />
+  <script>
+    (() => {
+      const saved = localStorage.getItem('theme');
+      const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.dataset.theme = saved || preferred;
+    })();
+  </script>
+  <title>Shreyas Boddani — Developer & Student Leader</title>
 </head>
 
 <body>
