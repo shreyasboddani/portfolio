@@ -334,7 +334,7 @@ export const TRAIL = [
   },
   {
     file: "contact",
-    title: "And the case stays open.",
+    title: "There’s always a next chapter.",
     text: "Still building. Still figuring it out. Maybe the next connection starts with you.",
     x: 974,
     y: 876,

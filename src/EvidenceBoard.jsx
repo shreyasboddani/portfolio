@@ -1,6 +1,7 @@
 import { motion as Motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, Fingerprint } from "lucide-react";
 import { EVIDENCE } from "./caseData";
+import DeskProps from "./DeskProps";
 
 function ResearchSketch() {
   return (
@@ -44,7 +45,7 @@ function PaperContent({ item }) {
     return (
       <>
         <span className="paper-tape portrait-tape" />
-        <span className="paper-code">SUBJECT PROFILE / NO. 001</span>
+        <span className="paper-code">HELLO / I’M SHREYAS</span>
         <div className="board-portrait-image">
           <img
             src="/shreyas-headshot.png"
@@ -69,7 +70,7 @@ function PaperContent({ item }) {
     return (
       <>
         <span className="paper-tape" />
-        <span className="paper-code">EXHIBIT 002 / A WORKING IDEA</span>
+        <span className="paper-code">NOTE 002 / A WORKING IDEA</span>
         <img
           className="evidence-image"
           src="/mentics.png"
@@ -105,7 +106,7 @@ function PaperContent({ item }) {
   if (item.kind === "letter")
     return (
       <>
-        <span className="paper-code">EXHIBIT 003 / FIELD EXPERIENCE</span>
+        <span className="paper-code">NOTE 003 / FIELD EXPERIENCE</span>
         <span className="paper-title letter-title">
           Learning
           <br />
@@ -125,7 +126,7 @@ function PaperContent({ item }) {
   if (item.kind === "research")
     return (
       <>
-        <span className="paper-code">EXHIBIT 004 / RESEARCH NOTES</span>
+        <span className="paper-code">NOTE 004 / RESEARCH NOTES</span>
         <ResearchSketch />
         <span className="paper-title research-title">
           What’s under
@@ -138,7 +139,7 @@ function PaperContent({ item }) {
   if (item.kind === "sticky")
     return (
       <>
-        <span className="paper-code">EXHIBIT 005 / THE PEOPLE</span>
+        <span className="paper-code">NOTE 005 / THE PEOPLE</span>
         <span className="handwritten sticky-title">
           Technology should
           <br />
@@ -158,7 +159,7 @@ function PaperContent({ item }) {
           <span>CLASS OF</span>
         </span>
         <span className="ticket-info">
-          <span className="paper-code">EXHIBIT 006 / FOUNDATIONS</span>
+          <span className="paper-code">NOTE 006 / FOUNDATIONS</span>
           <span className="ticket-title">NORTH FORSYTH</span>
           <span className="paper-caption">
             Georgia Tech CS 1301 · Dual enrollment
@@ -188,8 +189,8 @@ function PaperContent({ item }) {
   return (
     <>
       <span className="envelope-lines" />
-      <span className="paper-code">EXHIBIT 008 / NEXT CONNECTION</span>
-      <span className="handwritten envelope-title">The case stays open.</span>
+      <span className="paper-code">NOTE 008 / NEXT CONNECTION</span>
+      <span className="handwritten envelope-title">Let’s make something.</span>
       <span className="envelope-email">shreyasboddani@gmail.com</span>
       <span className="envelope-stamp">
         <Fingerprint size={28} />
@@ -204,23 +205,21 @@ export default function EvidenceBoard({
   visited,
   onOpen,
   onFocusEvidence,
+  inspecting,
 }) {
   const reduced = useReducedMotion();
   return (
     <div className="board-surface">
+      <DeskProps />
       <div className="cork-texture" />
       <div className="board-inner-shadow" />
-      <span className="board-screw screw-tl" />
-      <span className="board-screw screw-tr" />
-      <span className="board-screw screw-bl" />
-      <span className="board-screw screw-br" />
       <div className="board-corner-note">
         <span className="handwritten">
-          Follow the thread.
+          A few things
           <br />
-          Click a clue.
+          I’ve been
           <br />
-          Get to know me.
+          working on.
         </span>
         <span className="corner-note-arrow" aria-hidden="true">
           ↘
@@ -268,7 +267,7 @@ export default function EvidenceBoard({
       {EVIDENCE.map((item) => (
         <button
           key={item.id}
-          className={`evidence paper-${item.kind} ${active === item.file ? "evidence-active" : ""} ${visited.includes(item.file) ? "evidence-opened" : ""}`}
+          className={`evidence paper-${item.kind} ${active === item.file ? "evidence-active" : ""} ${visited.includes(item.file) ? "evidence-opened" : ""} ${inspecting === item.id ? "evidence-inspecting" : ""}`}
           style={{
             left: item.x,
             top: item.y,
@@ -278,6 +277,7 @@ export default function EvidenceBoard({
           }}
           aria-label={item.label}
           data-file={item.file}
+          data-item={item.id}
           tabIndex={mode === "story" && item.file !== active ? -1 : 0}
           onFocus={(event) => {
             if (
@@ -286,7 +286,7 @@ export default function EvidenceBoard({
             )
               onFocusEvidence(item);
           }}
-          onClick={() => onOpen(item.file)}
+          onClick={() => onOpen(item.file, item.id)}
         >
           <PaperContent item={item} />
           <span className="pushpin" aria-hidden="true" />
@@ -296,8 +296,8 @@ export default function EvidenceBoard({
         </button>
       ))}
       <div className="board-label">
-        <span>THE BODDANI FILES</span>
-        <span>PERSONAL ARCHIVE / CASE 027</span>
+        <span>ON MY DESK</span>
+        <span>SHREYAS BODDANI / STILL MAKING THINGS</span>
         <span className="label-barcode" aria-hidden="true" />
       </div>
       <div className="board-margin-note handwritten">

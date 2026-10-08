@@ -16,16 +16,22 @@ import {
   FileSearch,
   Grid2X2,
   Maximize,
+  Orbit,
   Minus,
   Move,
   Plus,
   RotateCcw,
   ScanLine,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import EvidenceBoard from "./EvidenceBoard";
 import CaseFile from "./CaseFile";
-import { FILES, RESUME, TRAIL } from "./caseData";
+import DeskMap from "./DeskMap";
+import useDeskAudio from "./useDeskAudio";
+import { EVIDENCE, FILES, RESUME, TRAIL } from "./caseData";
 import "./App.css";
+import "./Desk.css";
 
 function useViewport() {
   const [viewport, setViewport] = useState(() => ({
@@ -49,6 +55,16 @@ export default function App() {
   const windowRef = useRef(null);
   const drag = useRef(null);
   const suppressClick = useRef(false);
+  const transitionTimer = useRef(null);
+  const [inspection, setInspection] = useState(null);
+  const [opening, setOpening] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [orbit, setOrbit] = useState(0);
+  const audio = useDeskAudio();
+  const flightTarget = useMotionValue(0);
+  const flight = useSpring(flightTarget, { stiffness: 105, damping: 23 });
+  const glanceX = useSpring(0, { stiffness: 80, damping: 24 });
+  const glanceY = useSpring(0, { stiffness: 80, damping: 24 });
   const [dragging, setDragging] = useState(false);
   const [mode, setMode] = useState(() =>
     window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -101,12 +117,87 @@ export default function App() {
   );
   const focusScale = mobile ? mobileProfileScale : fit * 1.16;
   const exploreScale = fit * (zoomLevel ?? focusScale / fit);
+  const freeScale = useSpring(exploreScale, { stiffness: 140, damping: 27 });
+  const smoothFreeX = useSpring(freeX, { stiffness: 280, damping: 32 });
+  const smoothFreeY = useSpring(freeY, { stiffness: 280, damping: 32 });
+  useEffect(() => {
+    if (reduced) freeScale.jump(exploreScale);
+    else freeScale.set(exploreScale);
+  }, [exploreScale, freeScale, reduced]);
   const current = TRAIL[step];
   const storyRotation = useTransform(
     smoothProgress,
     stops,
     [-0.1, 1.1, -1.2, 0.9, -0.8, 0.2],
   );
+  const storyPitch = useTransform(
+    smoothProgress,
+    stops,
+    [20, 13, 24, 17, 22, 14],
+  );
+  const inspectionScale = Math.min(
+    (viewport.width - (mobile ? 55 : 440)) / (inspection?.w || 400),
+    Math.max(200, viewport.height - 280) / (inspection?.h || 480),
+    mobile ? 1.15 : 1.8,
+  );
+  const cameraScale = useTransform(() => {
+    const base =
+      mode === "story"
+        ? reduced
+          ? scales[step]
+          : storyScale.get()
+        : freeScale.get();
+    return base * (1 - flight.get()) + inspectionScale * flight.get();
+  });
+  const cameraX = useTransform(() => {
+    const base =
+      mode === "story"
+        ? reduced
+          ? (800 - current.x) * scales[step]
+          : storyX.get()
+        : reduced
+          ? freeX.get()
+          : smoothFreeX.get();
+    const destination = inspection
+      ? (800 - inspection.x - inspection.w / 2) * inspectionScale
+      : base;
+    return base * (1 - flight.get()) + destination * flight.get();
+  });
+  const cameraY = useTransform(() => {
+    const base =
+      mode === "story"
+        ? reduced
+          ? (500 - current.y) * scales[step]
+          : storyY.get()
+        : reduced
+          ? freeY.get()
+          : smoothFreeY.get();
+    const destination = inspection
+      ? (500 - inspection.y - inspection.h / 2) * inspectionScale
+      : base;
+    return base * (1 - flight.get()) + destination * flight.get();
+  });
+  const cameraPitch = useTransform(() => {
+    const pitch = reduced
+      ? 0
+      : orbit === 1
+        ? 0
+        : orbit === 2
+          ? mobile
+            ? 25
+            : 43
+          : mobile
+            ? 8
+            : mode === "story"
+              ? storyPitch.get()
+              : 24;
+    return (pitch + glanceY.get()) * (1 - flight.get()) + 2 * flight.get();
+  });
+  const cameraYaw = useTransform(() =>
+    reduced || mobile ? 0 : (glanceX.get() - 2.5) * (1 - flight.get()),
+  );
+  const smoothPitch = useSpring(cameraPitch, { stiffness: 95, damping: 25 });
+  useEffect(() => () => clearTimeout(transitionTimer.current), []);
 
   useMotionValueEvent(scrollYProgress, "change", (value) => {
     if (mode === "story")
@@ -114,14 +205,61 @@ export default function App() {
         Math.min(TRAIL.length - 1, Math.round(value * (TRAIL.length - 1))),
       );
   });
-  const open = (id) => {
-    setSelected(id);
-    if (id !== "index")
-      setVisited((previous) =>
-        previous.includes(id) ? previous : [...previous, id],
+  const open = (id, sourceId) => {
+    clearTimeout(transitionTimer.current);
+    setClosing(false);
+    audio.play("paper");
+    const reveal = () => {
+      setSelected(id);
+      if (id !== "index")
+        setVisited((previous) =>
+          previous.includes(id) ? previous : [...previous, id],
+        );
+    };
+    if (selected || id === "index" || reduced) {
+      reveal();
+      setOpening(false);
+    } else {
+      setInspection(
+        EVIDENCE.find((item) =>
+          sourceId ? item.id === sourceId : item.file === id,
+        ),
       );
+      setOpening(true);
+      flightTarget.set(1);
+      transitionTimer.current = setTimeout(() => {
+        reveal();
+        setOpening(false);
+      }, 650);
+    }
   };
+  const close = () => {
+    if (closing) return;
+    clearTimeout(transitionTimer.current);
+    audio.play("paper");
+    setClosing(true);
+    transitionTimer.current = setTimeout(
+      () => {
+        setSelected(null);
+        setClosing(false);
+        flightTarget.set(0);
+      },
+      reduced ? 0 : 300,
+    );
+  };
+  useEffect(() => {
+    const cancelFlight = (event) => {
+      if (event.key === "Escape" && opening) {
+        clearTimeout(transitionTimer.current);
+        setOpening(false);
+        flightTarget.set(0);
+      }
+    };
+    window.addEventListener("keydown", cancelFlight);
+    return () => window.removeEventListener("keydown", cancelFlight);
+  }, [opening, flightTarget]);
   const switchMode = (next) => {
+    if (opening) return;
     if (next === "explore") {
       freeX.set(reduced ? (800 - current.x) * scales[step] : storyX.get());
       freeY.set(reduced ? (500 - current.y) * scales[step] : storyY.get());
@@ -143,13 +281,17 @@ export default function App() {
     });
   };
   const reset = () => {
+    if (opening) return;
+    audio.play("click");
     setMode("explore");
     setZoomLevel(1);
     freeX.set(0);
     freeY.set(0);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
-  const zoom = (direction) => {
+  const zoom = (direction, quiet = false) => {
+    if (opening) return;
+    if (!quiet) audio.play("click");
     const currentScale =
       mode === "story"
         ? reduced
@@ -181,9 +323,28 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: "instant" });
     }
   };
+  useEffect(() => {
+    const element = windowRef.current;
+    if (mode !== "explore" || selected || opening) return;
+    const wheel = (event) => {
+      event.preventDefault();
+      const direction = Math.max(-1, Math.min(1, -event.deltaY / 120));
+      const nextZoom = Math.max(
+        0.65,
+        Math.min(5, exploreScale / fit + direction * 0.25),
+      );
+      const ratio = (nextZoom * fit) / exploreScale;
+      freeX.set(freeX.get() * ratio);
+      freeY.set(freeY.get() * ratio);
+      setZoomLevel(nextZoom);
+    };
+    element.addEventListener("wheel", wheel, { passive: false });
+    return () => element.removeEventListener("wheel", wheel);
+  }, [mode, selected, opening, exploreScale, fit, freeX, freeY]);
   const pointerDown = (event) => {
     if (
       mode !== "explore" ||
+      opening ||
       event.target.closest("a") ||
       event.button > 0 ||
       !event.isPrimary
@@ -200,6 +361,11 @@ export default function App() {
     suppressClick.current = false;
   };
   const pointerMove = (event) => {
+    if (!reduced && !mobile && !drag.current) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      glanceX.set(((event.clientX - rect.left) / rect.width - 0.5) * 5);
+      glanceY.set(((event.clientY - rect.top) / rect.height - 0.5) * -4);
+    }
     if (!drag.current || event.pointerId !== drag.current.pointerId) return;
     if (
       !drag.current.moved &&
@@ -239,7 +405,7 @@ export default function App() {
     ) {
       const evidence = event.target.closest(".evidence");
       if (evidence) {
-        open(evidence.dataset.file);
+        open(evidence.dataset.file, evidence.dataset.item);
         suppressClick.current = true;
       }
     }
@@ -278,18 +444,25 @@ export default function App() {
       <a className="skip-link" href="#case-index" onClick={() => open("index")}>
         Skip to case index
       </a>
-      <main className={`investigation mode-${mode}`}>
-        <h1 className="sr-only">Shreyas Boddani — The Boddani Files</h1>
+      <main
+        className={`investigation mode-${mode} ${opening ? "is-inspecting" : ""}`}
+      >
+        <h1 className="sr-only">On My Desk — Shreyas Boddani</h1>
         <section
           ref={stage}
           className="scroll-stage"
           style={{ height: mode === "story" ? "560svh" : "100svh" }}
-          aria-label="Shreyas Boddani’s interactive evidence board"
+          aria-label="Shreyas Boddani’s interactive 3D desk"
         >
           <div className="scene-shell">
             <div className="room-texture" />
             <div className="room-light" />
             <div className="scene-vignette" />
+            <div className="desk-atmosphere" aria-hidden="true">
+              {Array.from({ length: 16 }, (_, i) => (
+                <i key={i} style={{ "--i": i }} />
+              ))}
+            </div>
             <header className="archive-header">
               <a
                 className="archive-brand"
@@ -299,15 +472,16 @@ export default function App() {
                   if (mode === "story") goToStep(0);
                   else reset();
                 }}
-                aria-label="Return to the opening board"
+                aria-label="Return to the opening desk"
               >
                 <FileSearch size={25} />
                 <span>
-                  THE BODDANI FILES<small>A PERSONAL PORTFOLIO</small>
+                  ON MY DESK
+                  <small>SHREYAS BODDANI / A PERSONAL PORTFOLIO</small>
                 </span>
               </a>
               <span className="header-case">
-                <i /> CASE 027 <span>/</span> STILL IN PROGRESS
+                <i /> IDEAS, WORK & EVERYTHING BETWEEN
               </span>
               <div className="header-actions">
                 <a
@@ -323,7 +497,7 @@ export default function App() {
                   className="index-button"
                   onClick={() => open("index")}
                 >
-                  <Grid2X2 size={15} /> Case index
+                  <Grid2X2 size={15} /> Desk index
                 </button>
               </div>
             </header>
@@ -333,11 +507,15 @@ export default function App() {
               tabIndex={mode === "explore" ? 0 : -1}
               aria-label={
                 mode === "explore"
-                  ? "Explore the board. Drag to pan, or use arrow keys. Plus and minus zoom; zero fits the board."
+                  ? "Explore the desk. Drag to pan, or use arrow keys. Plus and minus zoom; zero fits the desk."
                   : "Scroll to follow the story. Click any piece of evidence to open its case file."
               }
               onPointerDown={pointerDown}
               onPointerMove={pointerMove}
+              onPointerLeave={() => {
+                glanceX.set(0);
+                glanceY.set(0);
+              }}
               onPointerUp={pointerUp}
               onPointerCancel={pointerUp}
               onClickCapture={(event) => {
@@ -351,27 +529,17 @@ export default function App() {
             >
               <Motion.div
                 className="board-camera"
+                initial={reduced ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.9 }}
                 style={{
-                  x:
-                    mode === "story"
-                      ? reduced
-                        ? (800 - current.x) * scales[step]
-                        : storyX
-                      : freeX,
-                  y:
-                    mode === "story"
-                      ? reduced
-                        ? (500 - current.y) * scales[step]
-                        : storyY
-                      : freeY,
+                  x: cameraX,
+                  y: cameraY,
+                  rotateX: smoothPitch,
+                  rotateY: cameraYaw,
                   rotate:
                     mode === "story" && !reduced && !mobile ? storyRotation : 0,
-                  scale:
-                    mode === "story"
-                      ? reduced
-                        ? scales[step]
-                        : storyScale
-                      : exploreScale,
+                  scale: cameraScale,
                 }}
               >
                 <EvidenceBoard
@@ -379,6 +547,9 @@ export default function App() {
                   mode={mode}
                   visited={visited}
                   onOpen={open}
+                  inspecting={
+                    opening || selected || closing ? inspection?.id : null
+                  }
                   onFocusEvidence={(item) => {
                     freeX.set((800 - item.x - item.w / 2) * exploreScale);
                     freeY.set((500 - item.y - item.h / 2) * exploreScale);
@@ -386,7 +557,7 @@ export default function App() {
                 />
               </Motion.div>
             </div>
-            <div className="board-tools" aria-label="Board controls">
+            <div className="board-tools" aria-label="Desk controls">
               <button onClick={() => zoom(-1)} aria-label="Zoom out">
                 <Minus size={17} />
               </button>
@@ -396,8 +567,8 @@ export default function App() {
               <span className="tool-divider" />
               <button
                 onClick={reset}
-                aria-label="Fit entire board"
-                title="Fit entire board"
+                aria-label="Fit entire desk"
+                title="Fit entire desk"
               >
                 <Maximize size={16} />
               </button>
@@ -413,13 +584,54 @@ export default function App() {
               >
                 <RotateCcw size={15} />
               </button>
+              <span className="tool-divider" />
+              <button
+                onClick={() => {
+                  setOrbit((value) => (value + 1) % 3);
+                  audio.play("click");
+                }}
+                aria-label="Change camera angle"
+                aria-pressed={orbit !== 0}
+                title={`Camera: ${["cinematic", "overhead", "perspective"][orbit]}`}
+              >
+                <Orbit size={17} />
+              </button>
+              <button
+                onClick={audio.toggle}
+                aria-label={audio.enabled ? "Turn sound off" : "Turn sound on"}
+                aria-pressed={audio.enabled}
+                title={audio.enabled ? "Sound on" : "Sound off"}
+              >
+                {audio.enabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              </button>
             </div>
+            <DeskMap
+              active={
+                opening
+                  ? inspection?.file
+                  : mode === "story"
+                    ? current.file
+                    : null
+              }
+              visited={visited}
+              onOpen={open}
+            />
+            {opening && (
+              <div className="inspection-hud" role="status">
+                <span />
+                <p>TAKING A CLOSER LOOK</p>
+                <strong>
+                  {FILES.find((item) => item.id === inspection?.file)?.label}
+                </strong>
+                <small>ESC TO PULL BACK</small>
+              </div>
+            )}
             <div className="board-view-hint">
               <span className="hint-line" />
               <span>
                 {mode === "story"
                   ? "A STORY IN CONNECTED PIECES"
-                  : "DRAG THE BOARD / OPEN A CLUE"}
+                  : "YOUR CURIOSITY. YOUR CAMERA."}
               </span>
             </div>
             <footer className="story-rail">
@@ -436,7 +648,7 @@ export default function App() {
                   <p>
                     {mode === "story"
                       ? current.text
-                      : "Drag to explore, zoom in, or open any of the pinned files."}
+                      : "Move around the desk. Pick something up. See where it leads."}
                   </p>
                 </div>
               </div>
@@ -526,7 +738,8 @@ export default function App() {
           selected={selected}
           visited={visited}
           onSelect={open}
-          onClose={() => setSelected(null)}
+          onClose={close}
+          closing={closing}
         />
       )}
     </>

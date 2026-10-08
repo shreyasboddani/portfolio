@@ -38,7 +38,7 @@ function ProfileFile() {
         <figcaption>A face to go with the code.</figcaption>
       </figure>
       <div>
-        <p className="file-kicker">SUBJECT PROFILE / CUMMING, GEORGIA</p>
+        <p className="file-kicker">A LITTLE ABOUT ME / CUMMING, GEORGIA</p>
         <h3>Hey, I’m Shreyas.</h3>
         <p>
           I’m a senior at North Forsyth High School, interested in computer
@@ -423,7 +423,13 @@ const CONTENT = {
   contact: ContactFile,
 };
 
-export default function CaseFile({ selected, visited, onSelect, onClose }) {
+export default function CaseFile({
+  selected,
+  visited,
+  onSelect,
+  onClose,
+  closing,
+}) {
   const dialog = useRef(null);
   const body = useRef(null);
   const previousFocus = useRef(null);
@@ -448,7 +454,7 @@ export default function CaseFile({ selected, visited, onSelect, onClose }) {
   return (
     <dialog
       ref={dialog}
-      className="case-dialog"
+      className={`case-dialog ${closing ? "is-closing" : ""}`}
       aria-labelledby="case-title"
       onCancel={(event) => {
         event.preventDefault();
@@ -459,17 +465,21 @@ export default function CaseFile({ selected, visited, onSelect, onClose }) {
       }}
     >
       <div className="case-folder">
-        <div className="folder-tab">THE BODDANI FILES / CASE 027</div>
+        <div className="folder-cover" aria-hidden="true">
+          <span>ON MY DESK / SHREYAS BODDANI</span>
+          <strong>{file?.label || "A little bit of everything."}</strong>
+          <i>OPEN. GET CURIOUS.</i>
+          <small>{file?.code || "INDEX"} / NOTES & THINGS</small>
+        </div>
+        <div className="folder-tab">ON MY DESK / SHREYAS BODDANI</div>
         <div className="case-file-header">
           <div>
             <p className="file-kicker">
               {file
-                ? `EXHIBIT ${file.code} / ${file.label.toUpperCase()}`
-                : "CASE INDEX / FOLLOW YOUR CURIOSITY"}
+                ? `NOTE ${file.code} / ${file.label.toUpperCase()}`
+                : "DESK INDEX / FOLLOW YOUR CURIOSITY"}
             </p>
-            <h2 id="case-title">
-              {file?.title || "The evidence, all in one place."}
-            </h2>
+            <h2 id="case-title">{file?.title || "Everything on the table."}</h2>
             <p>
               {file?.subtitle || "Open any file. There’s no required order."}
             </p>
@@ -477,12 +487,12 @@ export default function CaseFile({ selected, visited, onSelect, onClose }) {
           <button
             className="close-file"
             onClick={onClose}
-            aria-label="Close case file"
+            aria-label="Close file"
           >
             <X size={22} />
           </button>
         </div>
-        <nav className="file-tabs" aria-label="Case files">
+        <nav className="file-tabs" aria-label="Portfolio files">
           <button
             className={selected === "index" ? "selected" : ""}
             onClick={() => onSelect("index")}
@@ -495,7 +505,7 @@ export default function CaseFile({ selected, visited, onSelect, onClose }) {
               key={item.id}
               className={selected === item.id ? "selected" : ""}
               aria-pressed={selected === item.id}
-              aria-label={`Exhibit ${item.code}: ${item.label}`}
+              aria-label={`Note ${item.code}: ${item.label}`}
               title={item.label}
               onClick={() => onSelect(item.id)}
             >
@@ -508,31 +518,33 @@ export default function CaseFile({ selected, visited, onSelect, onClose }) {
           ref={body}
           tabIndex={0}
           role="region"
-          aria-label={`${file?.label || "Case index"} contents`}
+          aria-label={`${file?.label || "Desk index"} contents`}
         >
-          {Content ? (
-            <Content />
-          ) : (
-            <div className="case-index">
-              {FILES.map((item) => (
-                <button
-                  key={item.id}
-                  className={`index-card index-${item.color}`}
-                  onClick={() => onSelect(item.id)}
-                >
-                  <span className="index-code">
-                    EXHIBIT {item.code}
-                    {visited.includes(item.id) && (
-                      <Check size={14} aria-label="Opened" />
-                    )}
-                  </span>
-                  <strong>{item.label}</strong>
-                  <span>{item.subtitle}</span>
-                  <ArrowUpRight size={19} />
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="file-page-turn" key={selected}>
+            {Content ? (
+              <Content />
+            ) : (
+              <div className="case-index">
+                {FILES.map((item) => (
+                  <button
+                    key={item.id}
+                    className={`index-card index-${item.color}`}
+                    onClick={() => onSelect(item.id)}
+                  >
+                    <span className="index-code">
+                      NOTE {item.code}
+                      {visited.includes(item.id) && (
+                        <Check size={14} aria-label="Opened" />
+                      )}
+                    </span>
+                    <strong>{item.label}</strong>
+                    <span>{item.subtitle}</span>
+                    <ArrowUpRight size={19} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div className="case-file-footer">
           <span>PERSONAL ARCHIVE / SHREYAS BODDANI</span>
@@ -545,21 +557,21 @@ export default function CaseFile({ selected, visited, onSelect, onClose }) {
                       FILES[(index + FILES.length - 1) % FILES.length].id,
                     )
                   }
-                  aria-label="Previous case file"
+                  aria-label="Previous file"
                 >
                   <ArrowLeft size={16} />
                 </button>
                 <span>{file.code} / 008</span>
                 <button
                   onClick={() => onSelect(FILES[(index + 1) % FILES.length].id)}
-                  aria-label="Next case file"
+                  aria-label="Next file"
                 >
                   <ArrowRight size={16} />
                 </button>
               </>
             )}
             <button className="return-board" onClick={onClose}>
-              Back to the board <X size={13} />
+              Put it back <X size={13} />
             </button>
           </div>
         </div>
