@@ -277,6 +277,7 @@ export default function EvidenceBoard({
             "--angle": `${item.angle}deg`,
           }}
           aria-label={item.label}
+          data-file={item.file}
           tabIndex={mode === "story" && item.file !== active ? -1 : 0}
           onFocus={(event) => {
             if (

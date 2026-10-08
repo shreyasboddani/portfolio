@@ -229,8 +229,20 @@ export default function App() {
       ),
     );
   };
-  const pointerUp = () => {
+  const pointerUp = (event) => {
     suppressClick.current = drag.current?.moved || false;
+    if (
+      drag.current &&
+      !drag.current.moved &&
+      event.pointerType === "touch" &&
+      event.type !== "pointercancel"
+    ) {
+      const evidence = event.target.closest(".evidence");
+      if (evidence) {
+        open(evidence.dataset.file);
+        suppressClick.current = true;
+      }
+    }
     drag.current = null;
     setDragging(false);
   };
