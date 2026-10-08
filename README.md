@@ -22,7 +22,7 @@ The site is a static React + Vite application. Build with `npm run build` and de
 - **Follow the thread:** normal page scrolling moves the camera through six chapters. The dots and phone navigation arrows jump between chapters.
 - **Explore freely:** drag to orbit around the solid models; scroll to zoom. Right-drag or modified drag pans. On touch screens, one finger orbits and two fingers pan/pinch to zoom. Controls zoom, fit the room, or return to the portrait. With the scene focused, arrow keys pan, `+` and `-` zoom, and `0` fits the desk.
 - **Pick something up:** raycasting selects the actual meshes, while projected native buttons provide keyboard access. Picking a folder moves the camera and rotates its modeled cover around a hinge, then opens the readable portfolio file. The desk index and map provide direct access to all eight topics. Escape cancels a dive; putting a file back restores the camera and closes the 3D cover.
-- **Change the view:** the camera control cycles between the portrait, an overhead desk view, and an oblique room view. Dragging reveals the modeled sides and backs of the objects. Sound is optional and off by default; the sound button enables quiet synthesized paper and click effects.
+- **Change the view:** the camera control cycles between the portrait, an overhead desk view, and an oblique room view. Dragging reveals the modeled sides and backs of the objects. Sound is optional and off by default: layered paper rustles, wooden taps, mechanical switches, quiet camera movement, and rain outside the room. Turning sound off fades and suspends the audio graph; hidden tabs also pause it.
 - **Read comfortably:** native modal dialogs trap focus, support Escape, and return focus on close. Long files scroll within the folder. Escape also cancels a pending camera dive. Reduced-motion preferences start in a stationary exploration view, skip the dive, and remove folder and ambient animations.
 
 ## Structure
@@ -34,6 +34,7 @@ The site is a static React + Vite application. Build with `npm run build` and de
 - `tools/build_desk.py`: reproducible Blender geometry and GLB export.
 - `assets/blender/on-my-desk.blend`: editable Blender source with the photographs and screenshots packed into it.
 - `public/models/on-my-desk.glb`: deployed 3D scene; Blender is not required on the deployment server.
+- `public/textures/`: optimized CC0 Poly Haven wood, plaster and leather scans, plus source credits. The model embeds WebP derivatives of these maps.
 - `src/DeskMap.jsx`: direct navigation through a small desk map.
 - `src/CaseFile.jsx`: readable portfolio files, hinged covers, and native dialog behavior.
 - `src/useDeskAudio.js`: opt-in Web Audio effects; no downloaded audio assets.
@@ -50,7 +51,9 @@ Open `assets/blender/on-my-desk.blend` in Blender to edit the source, or regener
 blender --background --factory-startup --python tools/build_desk.py
 ```
 
-The script writes both the packed `.blend` source and the runtime `.glb`. Named `item_*` objects carry `evidenceId` and `fileId` extras; named `hinge_*` nodes provide cover pivots. GLB export converts Blender’s Z-up coordinates to Three.js Y-up coordinates. No model export runs during the Vercel build.
+The script writes both the packed `.blend` source and the runtime `.glb`. The Blender source includes a Cycles lighting rig and camera. The portrait is a smaller smoked-walnut frame with four rails, recessed print and mat, felt backing, brass hinge, and an easel support whose foot rests on the desk. The whole frame leans back 12 degrees and turns 14 degrees on the desk. Named `item_*` objects carry `evidenceId` and `fileId` extras; named `hinge_*` nodes provide cover pivots. GLB export converts Blender’s Z-up coordinates to Three.js Y-up coordinates. No model export runs during the Vercel build.
+
+The browser lighting uses a warm shadow-casting ceiling spotlight, a local desk lamp, and cool shadow-casting window light passing through physical Venetian blinds. The room has window trim, lit city windows, a radiator, and surface wear from scanned normal/roughness maps. Ray-integrated scattering and sparse dust reveal the spotlight's cone. Desktop rendering adds contact ambient occlusion and subtle highlight bloom; these heavier passes are disabled on phones. Anti-aliasing, a restrained vignette and fine film grain finish the canvas without affecting the readable HTML interface. Reduced motion freezes grain and dust.
 
 ## Content updates
 

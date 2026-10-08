@@ -57,6 +57,31 @@ BULB = material("Lamp glow", (1, .67, .29), .3, 0, ((1, .52, .14), 4))
 BOOK_COLORS = [material(f"Book cover {i}", c, .72) for i,c in enumerate([(.08,.19,.16),(.27,.13,.075),(.075,.12,.19),(.42,.34,.22),(.19,.13,.18)])]
 
 
+def scanned_surface(mat, asset, scale, normal_strength=.4, diffuse=True):
+    """Pack locally hosted CC0 scans into the editable scene and GLB."""
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    p = nodes.get("Principled BSDF")
+    mat["texture_scale"] = scale
+    for suffix, socket in [("diffuse", "Base Color"),("rough", "Roughness"),("nor_gl", "Normal")]:
+        if suffix == "diffuse" and not diffuse: continue
+        tex = nodes.new("ShaderNodeTexImage")
+        tex.image = bpy.data.images.load(str(PUBLIC / "textures" / f"{asset}_{suffix}.jpg"), check_existing=True)
+        if suffix != "diffuse": tex.image.colorspace_settings.name = "Non-Color"
+        if suffix == "nor_gl":
+            normal = nodes.new("ShaderNodeNormalMap")
+            normal.inputs["Strength"].default_value = normal_strength
+            links.new(tex.outputs["Color"], normal.inputs["Color"])
+            links.new(normal.outputs["Normal"], p.inputs[socket])
+        else: links.new(tex.outputs["Color"], p.inputs[socket])
+
+
+scanned_surface(WOOD, "wood_table_worn", 5.5, .28)
+scanned_surface(WOOD_EDGE, "wood_table_worn", 5.5, .28)
+scanned_surface(LEATHER, "brown_leather", 2.2, .35, False)
+scanned_surface(WALL, "blue_plaster_wall", 4, .4, False)
+for mat in FLOOR: scanned_surface(mat, "wood_table_worn", 5.5, .32, False)
+
+
 def finish(obj, name, mat=None, bevel=0, parent=None):
     obj.name = name
     if mat:
@@ -78,6 +103,15 @@ def box(name, loc, size, mat, bevel=.025, parent=None):
     obj = bpy.context.object
     obj.scale = size
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    if mat and "texture_scale" in mat:
+        # Box-project at a physical scale, including the thin side edges.
+        uv = obj.data.uv_layers.active
+        for face in obj.data.polygons:
+            normal = face.normal
+            axes = (0,1) if abs(normal.z)>.5 else (0,2) if abs(normal.y)>.5 else (1,2)
+            for index in face.loop_indices:
+                co = obj.data.vertices[obj.data.loops[index].vertex_index].co
+                uv.data[index].uv = (co[axes[0]]/mat["texture_scale"],co[axes[1]]/mat["texture_scale"])
     return finish(obj, name, mat, bevel, parent)
 
 
@@ -216,18 +250,42 @@ box("Leather writing mat", (0,.05,2.43), (9.9,6.75,.04), LEATHER, .075)
 outline = [(-4.83,-3.24,2.456),(4.83,-3.24,2.456),(4.83,3.34,2.456),(-4.83,3.34,2.456),(-4.83,-3.24,2.456)]
 tube("Leather mat stitching", outline, .009, STITCH)
 
-# A freestanding portrait. The image is a texture on the face of a solid frame.
-profile = empty("item_profile", (0,.45,4.10))
+# A small desktop frame, resting on its lower lip and a hinged easel leg.
+# Keep the support's rear foot on the same world-space plane as the frame lip.
+lean = math.radians(-12)
+frame_scale = .80
+lip_z, lip_y = -1.66, -.16
+contact_z = math.sin(lean)*lip_y + math.cos(lean)*lip_z
+profile = empty("item_profile", (-.45,.95,2.462-contact_z*frame_scale))
 profile["evidenceId"] = "profile"
 profile["fileId"] = "profile"
-box("Portrait back", (0,0,0), (2.72,.16,3.36), GREEN, .055, profile)
-box("Portrait ivory mat", (0,-.091,0), (2.58,.024,3.21), PAPER, .015, profile)
-picture("Portrait photograph", (0,-.108,.18),2.36,2.56,image_mat("Shreyas photograph","shreyas-headshot.png"),profile,True)
-text("Portrait name", "SHREYAS BODDANI", (-1.10,-.112,-1.31),.156,INK,profile,True)
-text("Portrait caption", "DEVELOPER. STUDENT. STILL CURIOUS.",(-1.10,-.112,-1.49),.065,INK,profile,True)
-rod("Portrait stand left", (-.8,.1,-1.6),(-.8,.85,-1.7),.025,BRASS,profile)
-rod("Portrait stand right", (.8,.1,-1.6),(.8,.85,-1.7),.025,BRASS,profile)
-box("Portrait kickstand",(0,.55,-.82),(1.7,.07,1.8),BLACK,.02,profile).rotation_euler.x=math.radians(-25)
+profile.rotation_euler = (lean,0,math.radians(-14))
+profile.scale = (frame_scale,)*3
+FRAME = material("Smoked walnut picture frame", (.065,.038,.025), .38)
+scanned_surface(FRAME, "wood_table_worn", 4, .18, False)
+BACKING = material("Frame felt backing", (.024,.030,.027), .96)
+box("Portrait felt back", (0,.016,0), (2.72,.085,3.19), BACKING, .025, profile)
+# Four separate rails make an actual recessed opening rather than a flat slab.
+for x in [-1.35,1.35]:
+    box("Portrait vertical frame rail", (x,-.055,0), (.18,.22,3.32), FRAME, .025, profile)
+for z in [-1.57,1.57]:
+    box("Portrait horizontal frame rail", (0,-.055,z), (2.62,.22,.18), FRAME, .025, profile)
+box("Portrait ivory mount", (0,-.078,0), (2.52,.018,3.03), PAPER, .008, profile)
+box("Portrait print edge", (0,-.091,.17), (2.29,.008,2.53), PAPER_EDGE, .004, profile)
+picture("Portrait photograph", (0,-.097,.17),2.26,2.50,image_mat("Shreyas photograph","shreyas-headshot.png"),profile,True)
+text("Portrait name", "SHREYAS BODDANI", (-1.04,-.094,-1.23),.146,INK,profile,True)
+text("Portrait caption", "DEVELOPER. STUDENT. STILL CURIOUS.",(-1.04,-.094,-1.40),.061,INK,profile,True)
+# The support starts at a real hinge on the back and reaches the desk.
+rear_y = 1.05
+rear_z = (contact_z-math.sin(lean)*rear_y)/math.cos(lean)
+hinge_a = Vector((0,.10,.45))
+foot_b = Vector((0,rear_y,rear_z+.022))
+support = box("Portrait hinged easel leg", (hinge_a+foot_b)/2, (.70,.055,(foot_b-hinge_a).length), FRAME, .018, profile)
+support.rotation_euler = (foot_b-hinge_a).to_track_quat("Z","Y").to_euler()
+rod("Portrait brass hinge",(-.40,.10,.45),(.40,.10,.45),.030,BRASS,profile)
+rod("Portrait rear rubber foot",(-.36,rear_y,rear_z+.022),(.36,rear_y,rear_z+.022),.025,BACKING,profile)
+for x in [-.32,.32]:
+    rod("Portrait stand limiting strap",(x,.07,-.70),(x,.63,-.70),.010,BACKING,profile)
 
 
 def folder(ident, file_id, loc, title, number, rotation=0, image=None, green=False):
@@ -326,6 +384,33 @@ box("Window sill",(1.2,6.22,3.37),(5.78,.43,.13),WOOD_EDGE,.025)
 for i in range(15):
     h=random.uniform(.24,.9)
     box("Distant city",(-1.26+i*.345,6.275,3.44+h/2),(.24,.035,h),WALL,0)
+    for row in range(int(h/.14)):
+        if random.random()>.35:
+            box("Distant apartment light",(-1.26+i*.345,6.247,3.50+row*.14),(.038,.012,.040),BULB,0)
+
+# Venetian blinds, window trim and wall details give the light real occluders.
+for i in range(13):
+    slat=box("Venetian blind slat",(1.2,6.10,5.02+i*.19),(5.20,.25,.025),WOOD_EDGE,.008)
+    slat.rotation_euler.x=math.radians(-24)
+for x in [-.52,2.92]:
+    rod("Blind ladder cord",(x,6.00,4.92),(x,6.00,7.45),.010,STITCH)
+box("Window upper molding",(1.2,6.13,7.81),(5.72,.24,.18),WOOD_EDGE,.022)
+for x in [-1.64,4.04]:
+    box("Window side molding",(x,6.15,5.52),(.15,.23,4.67),WOOD_EDGE,.022)
+for x in [-8.46,8.0]:
+    box("Room wainscot rail",(x/2,6.45,1.23),(8.1,.09,.09),WOOD_EDGE,.015)
+for i in range(12):
+    box("Radiator fin",(4.55+i*.13,6.14,1.24),(.09,.29,1.52),BLACK,.035)
+rod("Radiator pipe",(4.49,6.12,.45),(6.20,6.12,.45),.07,BLACK)
+box("Wall light switch",(7.40,6.43,3.00),(.22,.06,.34),CREAM,.022)
+box("Wall switch rocker",(7.40,6.39,3.00),(.11,.018,.17),PAPER,.01)
+
+# A real ceiling spotlight body at the source of the dramatic desk light.
+spot=empty("Ceiling investigation spotlight",(-3.4,-4.0,8.4))
+spot.rotation_euler=(Vector((0,0,2.5))-spot.location).to_track_quat("-Z","Y").to_euler()
+lathe("Ceiling spotlight housing",[(0,0),(.20,0),(.27,-.40),(.27,-.47),(.23,-.48)],(0,0,0),BLACK,spot)
+cylinder("Ceiling spotlight lens",(0,0,-.46),.23,.01,BULB,spot)
+rod("Spotlight suspension",(-3.4,-4.0,8.4),(-3.4,-4.0,10.3),.025,BLACK)
 
 # Shelf with real book volumes, a globe, and a little plant.
 for z in [1.9,3.8,5.7]:box("Wall shelf",(-5.5,6.0,z),(3.8,1,.13),WOOD,.035)
@@ -348,6 +433,7 @@ for i in range(7):
     leaf=finish(bpy.context.object,"Plant leaf",GREEN,parent=plant)
     leaf.scale=(.11,.055,.34)
     leaf.rotation_euler=(math.radians(32)*math.sin(a),math.radians(32)*math.cos(a),a)
+    for face in leaf.data.polygons: face.use_smooth=True
 
 # Merge non-interactive static geometry by material to keep browser draw calls low.
 static=[obj for obj in bpy.context.scene.objects if obj.type=="MESH" and not any(p.name.startswith("item_") or p.name.startswith("hinge_") for p in [obj.parent, obj.parent.parent if obj.parent else None] if p)]
@@ -367,13 +453,39 @@ for mat_name, objects in groups.items():
     bpy.ops.object.join()
     bpy.context.object.name="Room_"+mat_name.replace(" ","_")
 
-bpy.context.scene.world.color=(.08,.08,.08)
+def scene_spot(name, loc, target, energy, color, angle, softness):
+    light=bpy.data.lights.new(name,"SPOT")
+    light.energy=energy
+    light.color=color
+    light.spot_size=angle*2
+    light.spot_blend=softness
+    light.shadow_soft_size=.18
+    obj=bpy.data.objects.new(name,light)
+    bpy.context.collection.objects.link(obj)
+    obj.location=loc
+    obj.rotation_euler=(Vector(target)-obj.location).to_track_quat("-Z","Y").to_euler()
+
+scene_spot("Warm investigation key",(-3.4,-4.0,8.4),(0,0,2.5),1450,(1,.72,.43),.63,.48)
+scene_spot("Cool window spill",(1.2,6.24,7.4),(-.4,-.8,2.45),450,(.35,.56,1),.68,.3)
+scene_spot("Desk lamp pool",(-5,1.46,4.26),(-3,-.2,2.35),220,(1,.57,.24),.90,.75)
+camera_data=bpy.data.cameras.new("Portfolio camera")
+camera=bpy.data.objects.new("Portfolio camera",camera_data)
+bpy.context.collection.objects.link(camera)
+camera.location=(2.45,-8.4,5.65)
+camera.rotation_euler=(Vector((-.15,.55,3.48))-camera.location).to_track_quat("-Z","Y").to_euler()
+camera_data.lens=51
+bpy.context.scene.camera=camera
+bpy.context.scene.render.engine="CYCLES"
+bpy.context.scene.cycles.samples=64
+bpy.context.scene.render.resolution_x=1600
+bpy.context.scene.render.resolution_y=1000
+bpy.context.scene.world.color=(.015,.023,.035)
 bpy.context.scene["Scene author"]="Shreyas Boddani portfolio / On My Desk"
 bpy.context.scene["Build source"]="tools/build_desk.py"
 bpy.context.preferences.filepaths.save_version=0
 bpy.ops.file.pack_all()
 bpy.ops.object.select_all(action="DESELECT")
 bpy.ops.wm.save_as_mainfile(filepath=str(SOURCE / "on-my-desk.blend"))
-bpy.ops.export_scene.gltf(filepath=str(MODELS / "on-my-desk.glb"),export_format="GLB",export_extras=True,export_yup=True,export_apply=True)
+bpy.ops.export_scene.gltf(filepath=str(MODELS / "on-my-desk.glb"),export_format="GLB",export_extras=True,export_yup=True,export_apply=True,export_image_format="WEBP",export_image_quality=85)
 meshes=[o for o in bpy.context.scene.objects if o.type=="MESH"]
 print("DESK_MODEL_READY",len(meshes),"meshes",(MODELS / "on-my-desk.glb").stat().st_size,"bytes")

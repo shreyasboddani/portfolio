@@ -62,7 +62,7 @@ export default function App() {
   const open = (id, sourceId) => {
     clearTimeout(transitionTimer.current);
     setClosing(false);
-    audio.play("paper");
+    audio.play(selected ? "page" : "paper");
     const reveal = () => {
       setSelected(id);
       setOpening(false);
@@ -85,7 +85,7 @@ export default function App() {
   const close = () => {
     if (closing) return;
     clearTimeout(transitionTimer.current);
-    audio.play("paper");
+    audio.play("close");
     setClosing(true);
     transitionTimer.current = setTimeout(
       () => {
@@ -129,19 +129,20 @@ export default function App() {
   const reset = () => {
     if (opening || closing) return;
     switchMode("explore");
-    audio.play("click");
+    audio.play("camera");
     scene.current?.fit();
   };
   const home = () => {
     if (opening || closing) return;
     switchMode("explore");
     setOrbit(0);
+    audio.play("camera");
     scene.current?.home();
   };
   const zoom = (direction) => {
     if (opening || closing) return;
     switchMode("explore");
-    audio.play("click");
+    audio.play("camera");
     scene.current?.zoom(direction);
   };
   const changeAngle = () => {
@@ -149,7 +150,7 @@ export default function App() {
     switchMode("explore");
     const next = (orbit + 1) % 3;
     setOrbit(next);
-    audio.play("click");
+    audio.play("camera");
     scene.current?.angle(next);
   };
 

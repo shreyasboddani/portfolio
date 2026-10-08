@@ -2,9 +2,16 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
 import { EVIDENCE, FILES, TRAIL } from "./caseData";
 
-const MODEL = "/models/on-my-desk.glb?v=1";
+const MODEL = "/models/on-my-desk.glb?v=3";
 const ease = (t) => 1 - Math.pow(1 - t, 3);
 const mix = (a, b, t) => a.clone().lerp(b, t);
 const vector = (a) => new THREE.Vector3(...a);
@@ -30,8 +37,8 @@ function woodGrain(material) {
 
 export function createDeskScene(host, read, notify) {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color("#101820");
-  scene.fog = new THREE.FogExp2("#101820", 0.017);
+  scene.background = new THREE.Color("#080e14");
+  scene.fog = new THREE.FogExp2("#080e14", 0.022);
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
     powerPreference: "high-performance",
@@ -49,7 +56,7 @@ export function createDeskScene(host, read, notify) {
   );
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.02;
+  renderer.toneMappingExposure = 1.10;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.shadowMap.autoUpdate = false;
@@ -75,41 +82,160 @@ export function createDeskScene(host, read, notify) {
   const environmentRoom = new RoomEnvironment();
   const environment = pmrem.fromScene(environmentRoom, 0.04);
   scene.environment = environment.texture;
-  scene.environmentIntensity = 0.18;
+  scene.environmentIntensity = 0.12;
   environmentRoom.dispose();
   pmrem.dispose();
 
-  scene.add(new THREE.HemisphereLight("#d6e7ff", "#30231a", 0.55));
-  const key = new THREE.DirectionalLight("#ffe6bc", 1.55);
-  key.position.set(-5, 10, 6);
+  scene.add(new THREE.HemisphereLight("#a4bcdf", "#201510", 0.24));
+  const key = new THREE.SpotLight("#ffd7a2", 230, 23, 0.63, 0.48, 2);
+  key.position.set(-3.4, 8.4, 4.0);
   key.target.position.set(0, 2.5, 0);
   key.castShadow = true;
   key.shadow.mapSize.set(
     window.innerWidth < 700 ? 1024 : 2048,
     window.innerWidth < 700 ? 1024 : 2048,
   );
-  Object.assign(key.shadow.camera, {
-    left: -9,
-    right: 9,
-    top: 9,
-    bottom: -9,
-    near: 1,
-    far: 25,
-  });
+  key.shadow.camera.near = 0.4;
+  key.shadow.camera.far = 23;
   key.shadow.bias = -0.00015;
-  key.shadow.normalBias = 0.025;
-  key.shadow.radius = 3;
+  key.shadow.normalBias = 0.015;
+  key.shadow.radius = 4;
   scene.add(key, key.target);
-  const windowLight = new THREE.PointLight("#78b6ff", 22, 19, 2);
-  windowLight.position.set(2.5, 6.0, -5.3);
-  scene.add(windowLight);
-  const lamp = new THREE.SpotLight("#ffcb7b", 70, 12, 0.9, 0.75, 2);
+  const windowLight = new THREE.SpotLight("#729ecf", 65, 19, 0.68, 0.3, 2);
+  windowLight.position.set(1.2, 7.4, -6.24);
+  windowLight.target.position.set(-0.4, 2.45, 0.8);
+  windowLight.castShadow = true;
+  windowLight.shadow.mapSize.set(1024, 1024);
+  windowLight.shadow.bias = -0.0001;
+  windowLight.shadow.normalBias = 0.015;
+  scene.add(windowLight, windowLight.target);
+  const lamp = new THREE.SpotLight("#ffbb68", 38, 12, 0.9, 0.75, 2);
   lamp.position.set(-5, 4.26, -1.46);
   lamp.target.position.set(-3, 2.35, 0.2);
   scene.add(lamp, lamp.target);
-  const fill = new THREE.PointLight("#beddf0", 5, 15, 2);
+  const fill = new THREE.PointLight("#beddf0", 3, 15, 2);
   fill.position.set(4, 5, 7);
   scene.add(fill);
+
+  // Integrate scattering along the view ray inside the spotlight's real cone.
+  const beamLength = key.position.distanceTo(key.target.position);
+  const beamGeometry = new THREE.CylinderGeometry(0, Math.tan(key.angle)*beamLength, beamLength, 40, 1, false);
+  const beamMaterial = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, side: THREE.BackSide,
+    blending: THREE.AdditiveBlending,
+    defines: { STEPS: window.innerWidth < 700 ? 12 : 20 },
+    uniforms: {
+      inverseCone: { value: new THREE.Matrix4() },
+      coneLength: { value: beamLength },
+      slope: { value: Math.tan(key.angle) },
+    },
+    vertexShader: `varying vec3 worldPoint;
+      void main(){vec4 w=modelMatrix*vec4(position,1.0);worldPoint=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
+    fragmentShader: `uniform mat4 inverseCone;uniform float coneLength;uniform float slope;varying vec3 worldPoint;
+      void main(){
+        vec3 origin=(inverseCone*vec4(cameraPosition,1.0)).xyz;
+        vec3 end=(inverseCone*vec4(worldPoint,1.0)).xyz;
+        float stepLength=length(end-origin)/float(STEPS);
+        vec3 ray=normalize(end-origin);
+        float scattering=0.0;
+        for(int i=0;i<STEPS;i++){
+          vec3 p=origin+ray*(float(i)+.5)*stepLength;
+          float h=coneLength*.5-p.y;
+          float radius=max(.001,h*slope);
+          float density=(1.0-smoothstep(radius*.70,radius,length(p.xz)))*step(.0,h)*(1.0-smoothstep(coneLength*.55,coneLength,h));
+          scattering+=density*stepLength/(1.0+h*h*.12);
+        }
+        float opacity=min(.032,scattering*.008);
+        gl_FragColor=vec4(vec3(1.0,.69,.39),opacity);
+      }`,
+  });
+  const beam = new THREE.Mesh(beamGeometry, beamMaterial);
+  beam.position.copy(key.position).lerp(key.target.position, .5);
+  beam.quaternion.setFromUnitVectors(vector([0,1,0]), key.position.clone().sub(key.target.position).normalize());
+  beam.updateMatrixWorld();
+  beamMaterial.uniforms.inverseCone.value.copy(beam.matrixWorld).invert();
+  scene.add(beam);
+
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  const ao = window.innerWidth >= 700 ? new GTAOPass(scene, camera, 1, 1) : null;
+  if (ao) {
+    ao.blendIntensity = 0.65;
+    ao.updateGtaoMaterial({ radius: 0.23, thickness: 0.10, samples: 8 });
+    // Atmospheric scattering has no solid surface to contribute to contact AO.
+    const renderAO = ao.render.bind(ao);
+    ao.render = (...args) => {
+      beam.visible = false;
+      try { renderAO(...args); } finally { beam.visible = true; }
+    };
+    composer.addPass(ao);
+  }
+  const bloom = window.innerWidth >= 700
+    ? new UnrealBloomPass(new THREE.Vector2(1, 1), 0.16, 0.35, 1.15)
+    : null;
+  if (bloom) composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+  const antialias = new ShaderPass(FXAAShader);
+  composer.addPass(antialias);
+  const finish = new ShaderPass({
+    uniforms: { tDiffuse: { value: null }, time: { value: 0 } },
+    vertexShader: `varying vec2 vUv;
+      void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+    fragmentShader: `uniform sampler2D tDiffuse; uniform float time; varying vec2 vUv;
+      void main(){
+        vec3 color=texture2D(tDiffuse,vUv).rgb;
+        vec2 p=(vUv-.5)*1.4;
+        color*=1.0-.20*dot(p,p);
+        float grain=fract(sin(dot(vUv+fract(time*.013),vec2(12.9898,78.233)))*43758.5453)-.5;
+        color+=grain*.007;
+        gl_FragColor=vec4(color,1.0);
+      }`,
+  });
+  composer.addPass(finish);
+
+  // Sparse dust is lit inside the actual spotlight, rather than a screen overlay.
+  const dustGeometry = new THREE.BufferGeometry();
+  const dustPositions = new Float32Array((window.innerWidth < 700 ? 65 : 180) * 3);
+  for (let i = 0; i < dustPositions.length; i += 3) {
+    dustPositions[i] = Math.random() * 10 - 5;
+    dustPositions[i + 1] = 2.55 + Math.random() * 4.4;
+    dustPositions[i + 2] = Math.random() * 6 - 3;
+  }
+  dustGeometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
+  const dustMaterial = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { time: { value: 0 } },
+    vertexShader: `uniform float time; varying float illumination;
+      void main(){
+        vec3 p=position;
+        p.x+=sin(time*.15+position.y*2.0)*.08;
+        p.y+=sin(time*.10+position.x*3.0)*.06;
+        vec3 light=vec3(-3.4,8.4,4.0);
+        vec3 aim=normalize(vec3(0.0,2.5,0.0)-light);
+        illumination=smoothstep(.83,.94,dot(normalize(p-light),aim));
+        vec4 view=modelViewMatrix*vec4(p,1.0);
+        gl_PointSize=clamp(13.0/-view.z,1.0,2.5);
+        gl_Position=projectionMatrix*view;
+      }`,
+    fragmentShader: `varying float illumination;
+      void main(){float a=1.0-smoothstep(.1,.5,length(gl_PointCoord-.5));
+      gl_FragColor=vec4(vec3(.9,.64,.36),a*illumination*.16);}`,
+  });
+  scene.add(new THREE.Points(dustGeometry, dustMaterial));
+
+  const fibers = document.createElement("canvas");
+  fibers.width = fibers.height = 512;
+  const fiberContext = fibers.getContext("2d");
+  fiberContext.fillStyle = "#e2e2e2";
+  fiberContext.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 18000; i++) {
+    const shade = 145 + Math.floor(Math.random() * 100);
+    fiberContext.fillStyle = `rgba(${shade},${shade},${shade},.4)`;
+    fiberContext.fillRect(Math.random()*512, Math.random()*512, 1 + Math.random()*3, 1);
+  }
+  const fiberTexture = new THREE.CanvasTexture(fibers);
+  fiberTexture.wrapS = fiberTexture.wrapT = THREE.RepeatWrapping;
+  fiberTexture.repeat.set(3, 3);
 
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
@@ -143,24 +269,22 @@ export function createDeskScene(host, read, notify) {
     if (window.innerWidth < 700) {
       const tangent = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
       const distance = Math.max(
-        2.72 / (2 * tangent * camera.aspect * 0.78),
-        3.36 / (2 * tangent * 0.76),
+        2.88 * 0.8 / (2 * tangent * camera.aspect * 0.75),
+        3.32 * 0.8 / (2 * tangent * 0.76),
       );
-      const target = vector([0, 4.03, -0.45]);
+      const target = vector([-0.45, 3.82, -0.95]);
       return {
         position: target
           .clone()
           .add(
-            vector([0.03, 0.19, 0.981]).normalize().multiplyScalar(distance),
+            vector([0.20, 0.19, 0.961]).normalize().multiplyScalar(distance),
           ),
         target,
       };
     }
     return {
-      position: vector(
-        window.innerWidth < 700 ? [0.25, 5.4, 7.7] : [0.65, 5.8, 8.5],
-      ),
-      target: vector([0, 3.78, -0.45]),
+      position: vector([2.45, 5.65, 8.4]),
+      target: vector([-0.15, 3.48, -0.55]),
     };
   }
   function wide() {
@@ -301,6 +425,15 @@ export function createDeskScene(host, read, notify) {
     camera.fov = width < 700 ? 42 : 38;
     camera.updateProjectionMatrix();
     renderer.setSize(width, height);
+    const pixelRatio = Math.min(window.devicePixelRatio, window.innerWidth < 700 ? 1 : 1.25);
+    composer.setPixelRatio(pixelRatio);
+    composer.setSize(width, height);
+    antialias.uniforms.resolution.value.set(1/(width*pixelRatio), 1/(height*pixelRatio));
+    if (ao) {
+      ao.enabled = window.innerWidth >= 700;
+      ao.setSize(Math.round(width * .75), Math.round(height * .75));
+    }
+    if (bloom) bloom.enabled = window.innerWidth >= 700;
   };
   const observer = new ResizeObserver(resize);
   observer.observe(host);
@@ -362,12 +495,19 @@ export function createDeskScene(host, read, notify) {
           : obj.geometry.attributes.position.count / 3;
         obj.castShadow = true;
         obj.receiveShadow = true;
-        if (obj.material.name.startsWith("Walnut")) woodGrain(obj.material);
+        if (["Ivory paper", "Manila", "Paper edges", "Frame felt backing"].includes(obj.material.name) || obj.material.name.startsWith("Book cover")) {
+          obj.material.bumpMap = fiberTexture;
+          obj.material.bumpScale = .006;
+        }
+        if (obj.material.name.startsWith("Walnut") && !obj.material.map) woodGrain(obj.material);
+        for (const name of ["map", "normalMap", "roughnessMap"]) {
+          if (obj.material[name])
+            obj.material[name].anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+        }
         if (obj.material.name === "Shreyas photograph") {
-          obj.material = new THREE.MeshBasicMaterial({
-            map: obj.material.map,
-            toneMapped: false,
-          });
+          // The print receives the room's light like the rest of the frame.
+          obj.material.roughness = 0.58;
+          obj.material.envMapIntensity = 0.3;
         }
         let root = obj;
         while (root && !root.userData.evidenceId) root = root.parent;
@@ -497,9 +637,8 @@ export function createDeskScene(host, read, notify) {
       const item = objects.get(id);
       item.root.getWorldPosition(projected);
       if (id === "profile") {
-        projected.x += 1.05;
-        projected.y -= 1.46;
-        projected.z += 0.14;
+        // The anchor follows the frame's lean, yaw and smaller physical size.
+        projected.copy(item.root.localToWorld(vector([1.08, -1.18, 0.17])));
       } else {
         projected.x += 0.9;
         projected.z += 0.65;
@@ -539,7 +678,10 @@ export function createDeskScene(host, read, notify) {
       (!state.locked || moving) &&
       now - renderAt > (window.innerWidth < 700 ? 30 : 12)
     ) {
-      renderer.render(scene, camera);
+      const time = state.reduced ? 0 : now / 1000;
+      dustMaterial.uniforms.time.value = time;
+      finish.uniforms.time.value = state.reduced ? 0 : Math.floor(time * 12);
+      composer.render();
       renderAt = now;
     }
   }
@@ -648,6 +790,14 @@ export function createDeskScene(host, read, notify) {
       if (model) disposeModel(model);
       environment.dispose();
       key.shadow.map?.dispose();
+      windowLight.shadow.map?.dispose();
+      dustGeometry.dispose();
+      dustMaterial.dispose();
+      beamGeometry.dispose();
+      beamMaterial.dispose();
+      fiberTexture.dispose();
+      for (const pass of composer.passes) pass.dispose?.();
+      composer.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
       for (const button of hotspots.values()) button.remove();
