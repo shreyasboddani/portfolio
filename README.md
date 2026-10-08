@@ -1,6 +1,6 @@
 # On My Desk
 
-[Shreyas Boddani’s portfolio](https://shreyasboddani.vercel.app/), explored as a real-time 3D room. An authored Blender model contains the solid walnut desk, metal legs and drawers, freestanding portrait, hinged folders, hollow ceramic mug, articulated lamp, notebook, plant, bookshelves, and divided window. Three.js renders the GLB with physical materials, lights, shadows, and a perspective camera.
+[Shreyas Boddani’s portfolio](https://shreyasboddani.vercel.app/), told through two connected editions: a guided 3D room and a complete detective-themed webpage. Both follow the same facts, portrait, projects, and resume. An authored Blender model contains the solid walnut desk, metal legs and drawers, freestanding portrait, hinged folders, hollow ceramic mug, articulated lamp, notebook, plant, bookshelves, and divided window. Three.js renders the GLB with physical materials, lights, shadows, and a perspective camera.
 
 ## Run
 
@@ -19,16 +19,21 @@ The site is a static React + Vite application. Build with `npm run build` and de
 
 ## Explore
 
-- **Follow the thread:** normal page scrolling moves the camera through six chapters. The dots and phone navigation arrows jump between chapters.
+- **Begin the story:** the default 3D edition opens with a prologue, a visible “Begin the story” button, and an immediate webpage alternative. Normal page scrolling pushes into the portrait and then moves the camera through six connected chapters with narrative captions, next-thread prompts, and direct file actions. The chapter dots jump between stops.
+- **Read the web edition:** “Webpage version” switches to a full inline portfolio with an animated portrait dossier, connected chapter navigation, project folders, internship field notes, research, community, education, skills, recognition, and contact. It does not require WebGL. Open `?view=web` directly, or use anchors such as `?view=web#research`. The reading progress, thread drawing, and evidence reveals follow the scroll.
+- **Switch perspectives:** the header button in either edition uses a folder-style page-turn transition. The URL records the selected edition and supports browser back/forward. Leaving the room disposes the WebGL renderer and its resources; a direct web-edition visit does not download the GLB or viewer. Returning to 3D starts its guided opening again.
 - **Explore freely:** drag to orbit around the solid models; scroll to zoom. Right-drag or modified drag pans. On touch screens, one finger orbits and two fingers pan/pinch to zoom. Controls zoom, fit the room, or return to the portrait. With the scene focused, arrow keys pan, `+` and `-` zoom, and `0` fits the desk.
 - **Pick something up:** raycasting selects the actual meshes, while projected native buttons provide keyboard access. Picking a folder moves the camera and rotates its modeled cover around a hinge, then opens the readable portfolio file. The desk index and map provide direct access to all eight topics. Escape cancels a dive; putting a file back restores the camera and closes the 3D cover.
 - **Change the view:** the camera control cycles between the portrait, an overhead desk view, and an oblique room view. Dragging reveals the modeled sides and backs of the objects. Sound is optional and off by default: layered paper rustles, wooden taps, mechanical switches, quiet camera movement, and rain outside the room. Turning sound off fades and suspends the audio graph; hidden tabs also pause it.
-- **Read comfortably:** native modal dialogs trap focus, support Escape, and return focus on close. Long files scroll within the folder. Escape also cancels a pending camera dive. Reduced-motion preferences start in a stationary exploration view, skip the dive, and remove folder and ambient animations.
+- **Read comfortably:** native modal dialogs trap focus, support Escape, and return focus on close. Long files scroll within the folder. Escape also cancels a pending camera dive. Reduced-motion preferences keep the guided story, jump between views, skip camera dives and transition motion, and freeze ambient animations. The web edition shows its content immediately without animated entrances.
 
 ## Structure
 
 - `src/caseData.js`: facts, projects, experience, file labels, board coordinates, and camera stops.
-- `src/App.jsx`: story chapters, camera controls, opening/closing state, and readable-file navigation.
+- `src/App.jsx`: edition routing, URL/history handling, page-turn transition and focus return.
+- `src/DeskExperience.jsx`: 3D prologue, story chapters, camera controls, opening/closing state, and readable-file navigation.
+- `src/StoryWebsite.jsx`: complete inline web edition, chapter navigation, reading progress and scroll motion.
+- `src/ExperienceSwitch.jsx`: the shared, visible switch between editions.
 - `src/Desk3D.jsx`: lazily loaded React bridge to the WebGL engine.
 - `src/deskScene.js`: GLB loading, physical lighting, shadow rendering, OrbitControls, raycasting, 3D hinge animation, camera choreography, projected keyboard controls, and resource cleanup.
 - `tools/build_desk.py`: reproducible Blender geometry and GLB export.
@@ -36,12 +41,12 @@ The site is a static React + Vite application. Build with `npm run build` and de
 - `public/models/on-my-desk.glb`: deployed 3D scene; Blender is not required on the deployment server.
 - `public/textures/`: optimized CC0 Poly Haven wood, plaster and leather scans, plus source credits. The model embeds WebP derivatives of these maps.
 - `src/DeskMap.jsx`: direct navigation through a small desk map.
-- `src/CaseFile.jsx`: readable portfolio files, hinged covers, and native dialog behavior.
+- `src/CaseFile.jsx`: shared portfolio content, readable 3D files, hinged covers, and native dialog behavior. The web edition reuses the same research, community, education, recognition and contact content inline.
 - `src/useDeskAudio.js`: opt-in Web Audio effects; no downloaded audio assets.
 - `src/App.css`, `src/Desk.css`, and `src/Scene3D.css`: interface, native reading folders, projected controls, loading/fallback views, and responsive layouts.
 - `public/`: the real portrait, actual project screenshots, procedural SVG grain, and the supplied resume.
 
-The scene is rendered in a WebGL canvas, with geometry and materials exported from Blender. It uses the real portrait and project screenshots, with no generated stock artwork. The renderer loads separately from the main interface. Device pixel ratio and shadow resolution are capped on phones, static shadows are reused, and rendering pauses while a readable folder covers a settled scene. All topics remain available in native HTML if WebGL cannot start. Fonts are Space Grotesk, Special Elite, Libre Baskerville, Caveat, and IBM Plex Mono, with system fallbacks.
+The scene is rendered in a WebGL canvas, with geometry and materials exported from Blender. It uses the real portrait and project screenshots, with no generated stock artwork. The renderer loads separately from the main interface. Device pixel ratio and shadow resolution are capped on phones, static shadows are reused, and rendering pauses while a readable folder covers a settled scene. If the renderer or GLB cannot load, the app automatically opens the complete web edition, where all topics remain available in native HTML. Fonts are Space Grotesk, Special Elite, Libre Baskerville, Caveat, and IBM Plex Mono, with system fallbacks.
 
 ## Rebuild the 3D model
 
@@ -57,6 +62,6 @@ The browser lighting uses a warm shadow-casting ceiling spotlight, a local desk 
 
 ## Content updates
 
-The content follows the supplied October 2026 resume. Replace `public/shreyas-resume.pdf` and bump the `RESUME` version query in `caseData.js` when updating it. The supplied PDF is preserved byte for byte.
+The content follows `Shreyas_Boddani_Resume_2026.pdf`, supplied October 8, 2026, including the corrected organization name **Cloud Supply Chain Solutions**. Replace `public/shreyas-resume.pdf` and bump the `RESUME` version query in `caseData.js` when updating it. The supplied PDF is preserved byte for byte.
 
 Before shipping, verify GLB loading, actual mesh picking, orbit/zoom/pinch gestures, portrait framing, all six camera stops, all three angles, camera dives and cancellation, physical hinge opening/closing, all eight readable files, focus return, clipboard copying, the resume endpoint, reduced motion, fallback access, and accessibility contrast.

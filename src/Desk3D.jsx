@@ -24,6 +24,7 @@ export default function Desk3D({
       cancel: () => engine.current?.cancel(),
       fit: () => engine.current?.fit(),
       home: () => engine.current?.home(),
+      begin: () => engine.current?.begin(),
       angle: (value) => engine.current?.angle(value),
       zoom: (direction) => engine.current?.zoom(direction),
     }),

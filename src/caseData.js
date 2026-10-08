@@ -1,5 +1,5 @@
 export const EMAIL = "shreyasboddani@gmail.com";
-export const RESUME = "/shreyas-resume.pdf?v=20261007";
+export const RESUME = "/shreyas-resume.pdf?v=20261008";
 export const SOCIALS = [
   { label: "GitHub", href: "https://github.com/shreyasboddani" },
   { label: "LinkedIn", href: "https://linkedin.com/in/shreyas-boddani" },
@@ -74,7 +74,7 @@ export const EXPERIENCE = [
   {
     date: "Aug. 2026 — present",
     role: "Software Engineering Intern",
-    org: "Cloud Supply Chain Services",
+    org: "Cloud Supply Chain Solutions",
     description:
       "Contributing to 3D warehouse visualization and designing 2D floor-plan features for operational dashboards. Researching API-driven tools and documenting engineering requirements for the intern team.",
   },
@@ -289,8 +289,8 @@ export const EVIDENCE = [
 export const TRAIL = [
   {
     file: "profile",
-    title: "Every story starts with a person.",
-    text: "I’m Shreyas. This is what I’ve been working on, and the things that connect it.",
+    title: "A person, before a portfolio.",
+    text: "I’m Shreyas, a high school senior in Georgia. My week moves between code, student teams, research, and tutoring. Here’s how the pieces connect.",
     x: 800,
     y: 466,
     factor: 1.16,
@@ -298,8 +298,8 @@ export const TRAIL = [
   },
   {
     file: "projects",
-    title: "An idea became something real.",
-    text: "Mentics started with college planning. It became a working beta with about 50 users.",
+    title: "Could college planning be a little easier?",
+    text: "I co-founded Mentics, a free college-planning beta with about 50 users. Authentication, roadmaps, deployment—and real feedback to build from. A question became a working thing.",
     x: 366,
     y: 349,
     factor: 1.85,
@@ -308,7 +308,7 @@ export const TRAIL = [
   {
     file: "experience",
     title: "Then the work got bigger.",
-    text: "Professional engineering teams. 3D warehouse tools. AI safety research. More to learn.",
+    text: "At Cirrus Labs and Cloud Supply Chain Solutions, the work lives inside a team: code review, 3D warehouse tools, engineering requirements, and AI safety research. There’s a lot to learn from real constraints.",
     x: 1296,
     y: 404,
     factor: 1.9,
@@ -316,8 +316,8 @@ export const TRAIL = [
   },
   {
     file: "research",
-    title: "Follow a question a little further.",
-    text: "Nanoparticle data, machine learning, and orbital collision risk. Curiosity has range.",
+    title: "Some questions need a closer look.",
+    text: "Silver nanoparticle experiments. Random Forest models. Orbital collision risk. Different problems, connected by a need to examine what the data can actually support.",
     x: 1304,
     y: 723,
     factor: 2,
@@ -326,7 +326,7 @@ export const TRAIL = [
   {
     file: "community",
     title: "The thread comes back to people.",
-    text: "Free AI education, student leadership, and 40+ hours of chemistry tutoring.",
+    text: "Free AI education reaching 180+ students through outreach content. FBLA leadership. More than 40 hours of chemistry tutoring. There’s useful work on both sides of the screen.",
     x: 552,
     y: 850,
     factor: 1.9,
@@ -334,8 +334,8 @@ export const TRAIL = [
   },
   {
     file: "contact",
-    title: "There’s always a next chapter.",
-    text: "Still building. Still figuring it out. Maybe the next connection starts with you.",
+    title: "Leave room for the next chapter.",
+    text: "Still building. Still figuring it out. A project, an opportunity to learn, or a good conversation—the next connection could start with you.",
     x: 974,
     y: 876,
     factor: 1.7,

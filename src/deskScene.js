@@ -308,6 +308,15 @@ export function createDeskScene(host, read, notify) {
       target,
     };
   }
+  function openingView() {
+    if (window.innerWidth < 700) {
+      const view = home();
+      const offset = view.position.clone().sub(view.target).multiplyScalar(1.30);
+      const target = vector([-.45, 3.1, -.95]);
+      return { position: target.clone().add(offset), target };
+    }
+    return { position: vector([2.8,5.9,9.8]), target: vector([-1.55,3.65,-.7]) };
+  }
   function itemView(id) {
     const item = objects.get(id);
     if (!item || id === "profile") return home();
@@ -547,7 +556,7 @@ export function createDeskScene(host, read, notify) {
       canvas.dataset.loaded = "true";
       renderer.shadowMap.needsUpdate = true;
       ready = true;
-      fly(home(), 1500);
+      fly(read().mode === "story" ? openingView() : home(), 1500);
       notify("ready");
     },
     undefined,
@@ -581,18 +590,30 @@ export function createDeskScene(host, read, notify) {
         complete?.();
       }
     } else if (ready && state.mode === "story" && !state.locked) {
-      const stop = progress * (TRAIL.length - 1);
+      const intro = Math.min(1, progress / .14);
+      const stop = Math.max(0, (progress - .14)/.86) * (TRAIL.length - 1);
       const index = Math.floor(stop),
         next = Math.min(TRAIL.length - 1, index + 1);
-      const a = itemView(
+      let a = itemView(
         EVIDENCE.find((item) => item.file === TRAIL[index].file)?.id,
       );
-      const b = itemView(
+      let b = itemView(
         EVIDENCE.find((item) => item.file === TRAIL[next].file)?.id,
       );
+      if (progress < .14) {
+        a = openingView();
+        b = home();
+      } else if (window.innerWidth >= 700) {
+        // Leave room for the narrative beside the object being investigated.
+        a.position.x -= .95;
+        a.target.x -= .95;
+        b.position.x -= .95;
+        b.target.x -= .95;
+      }
       const amount = state.reduced ? 1 : 1 - Math.exp(-dt * 6);
-      camera.position.lerp(mix(a.position, b.position, stop - index), amount);
-      controls.target.lerp(mix(a.target, b.target, stop - index), amount);
+      const blend = progress < .14 ? ease(intro) : stop - index;
+      camera.position.lerp(mix(a.position, b.position, blend), amount);
+      controls.target.lerp(mix(a.target, b.target, blend), amount);
     }
     controls.update();
     let moving = Boolean(flight);
@@ -713,6 +734,10 @@ export function createDeskScene(host, read, notify) {
     },
     home() {
       if (ready) fly(home());
+    },
+    begin() {
+      progress = 0;
+      if (ready) fly(openingView());
     },
     angle(value) {
       angle = value;

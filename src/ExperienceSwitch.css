@@ -1,0 +1,37 @@
+.experience-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid #bc9d7366;
+  border-radius: 3px;
+  background: #decbaa14;
+  color: #e9dbbd;
+  font: 11px var(--mono);
+  transition:
+    background 0.2s,
+    transform 0.2s;
+  white-space: nowrap;
+}
+.experience-switch:hover {
+  background: #c5a47025;
+  transform: translateY(-2px);
+}
+@media (max-width: 760px) {
+  .experience-switch {
+    padding: 10px 11px;
+    font-size: 9px;
+    gap: 7px;
+  }
+  .experience-switch > svg:last-child {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .experience-switch {
+    transition: none;
+  }
+  .experience-switch:hover {
+    transform: none;
+  }
+}

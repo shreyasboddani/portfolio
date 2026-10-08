@@ -1,0 +1,54 @@
+.edition-loading {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: #172724;
+  color: #e5d9ba;
+  font: 13px var(--mono);
+}
+.edition-transfer {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: #e8dcc2;
+  color: #383829;
+  background-image: url("/board-grain.svg");
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  pointer-events: auto;
+  box-shadow: inset 0 0 160px #63503614;
+}
+.transfer-folder-tab {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 28px 35px;
+  border-bottom: 1px solid #81714c55;
+  font: 9px var(--mono);
+  letter-spacing: 1.5px;
+}
+.edition-transfer > svg {
+  color: #8e402f;
+}
+.edition-transfer > p {
+  font: clamp(34px, 5vw, 65px) var(--serif);
+  letter-spacing: -1.5px;
+  margin: 32px 0 23px;
+}
+.edition-transfer > span {
+  font: 9px var(--mono);
+  letter-spacing: 2px;
+  color: #72583f;
+}
+.edition-transfer > i {
+  display: block;
+  width: 180px;
+  height: 2px;
+  background: #a04b37;
+  margin-top: 34px;
+  transform-origin: left;
+}

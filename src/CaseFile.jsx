@@ -423,6 +423,11 @@ const CONTENT = {
   contact: ContactFile,
 };
 
+export function FileContent({ id }) {
+  const Content = CONTENT[id];
+  return Content ? <Content /> : null;
+}
+
 export default function CaseFile({
   selected,
   visited,
