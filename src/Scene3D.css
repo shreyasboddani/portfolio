@@ -1,0 +1,232 @@
+.real-3d-window {
+  perspective: none;
+  overflow: hidden;
+}
+.webgl-host {
+  position: absolute;
+  inset: 0;
+  outline-offset: -5px;
+}
+.webgl-host canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.scene-vignette {
+  z-index: 5;
+  box-shadow: inset 0 0 100px 5px #060a1066;
+}
+.desk-atmosphere {
+  display: none;
+}
+.mesh-hotspot {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  border: 1px solid #fae4b79c;
+  background: #0d1b24b3;
+  box-shadow: 0 0 0 5px #13202822;
+  color: #ffe8bb;
+  font:
+    18px "Space Grotesk",
+    sans-serif;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.mesh-hotspot[hidden] {
+  display: none;
+}
+.mesh-hotspot:before {
+  content: "+";
+}
+.mesh-hotspot > span {
+  position: absolute;
+  right: 35px;
+  white-space: nowrap;
+  padding: 8px 12px;
+  color: #f5e6cc;
+  background: #101a22ed;
+  font: 9px var(--mono);
+  letter-spacing: 0.3px;
+  border: 1px solid #d0b28155;
+  border-radius: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.mesh-hotspot:hover,
+.mesh-hotspot:focus-visible,
+.mesh-hotspot.active {
+  background: #976739;
+  box-shadow: 0 0 0 5px #d4aa5822;
+}
+.mesh-hotspot:hover > span,
+.mesh-hotspot:focus-visible > span {
+  opacity: 1;
+}
+.object-tooltip {
+  position: absolute;
+  z-index: 6;
+  padding: 10px 14px;
+  background: #0d1920ed;
+  border: 1px solid #d9bc8666;
+  color: #f6e2bb;
+  font: 10px var(--mono);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(5px);
+  transition:
+    opacity 0.18s,
+    transform 0.18s;
+  border-radius: 3px;
+}
+.object-tooltip.visible {
+  opacity: 1;
+  transform: none;
+}
+.scene-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: radial-gradient(ellipse at 50% 40%, #24343b, #101820 72%);
+  color: #dfd2b7;
+}
+.scene-loading img {
+  width: 104px;
+  height: 118px;
+  object-fit: cover;
+  border: 5px solid #e2d3b4;
+  transform: rotate(-4deg);
+  box-shadow: 0 15px 40px #0005;
+  margin-bottom: 25px;
+}
+.scene-loading p {
+  font:
+    25px "Space Grotesk",
+    sans-serif;
+  letter-spacing: -0.6px;
+  margin: 0 0 10px;
+}
+.scene-loading > span {
+  font-size: 7px;
+  letter-spacing: 2px;
+  color: #c3b59e;
+}
+.scene-loading i {
+  margin-top: 23px;
+  width: 120px;
+  height: 2px;
+  background: #71654b;
+  position: relative;
+  overflow: hidden;
+}
+.scene-loading i:after {
+  content: "";
+  position: absolute;
+  width: 45px;
+  height: 2px;
+  background: #e3bf80;
+  animation: loading-desk 1.3s infinite ease-in-out;
+}
+.scene-fallback {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  background: #13212a;
+  text-align: center;
+  padding: 40px 25px;
+}
+.scene-fallback > img {
+  width: 180px;
+  height: 205px;
+  object-fit: cover;
+  margin: 0 auto 25px;
+  border: 9px solid #e8ddc2;
+  transform: rotate(-3deg);
+}
+.scene-fallback h2 {
+  font:
+    28px "Space Grotesk",
+    sans-serif;
+  margin: 0 0 18px;
+}
+.scene-fallback > p {
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 0 auto 30px;
+  max-width: 410px;
+}
+.scene-fallback > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 540px;
+  margin: auto;
+}
+.scene-fallback button {
+  padding: 15px;
+  border: 1px solid #b4a07755;
+  color: #ddccab;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 10px;
+  background: #dfc7980d;
+}
+.board-view-hint {
+  pointer-events: none;
+}
+.desk-map {
+  background: #102029e8;
+}
+.inspection-hud {
+  bottom: 156px;
+  padding: 11px 23px;
+}
+.inspection-hud > span {
+  display: none;
+}
+.inspection-hud strong {
+  font-size: 18px;
+}
+@keyframes loading-desk {
+  from {
+    transform: translateX(-50px);
+  }
+  to {
+    transform: translateX(140px);
+  }
+}
+@media (max-width: 699px) {
+  .mesh-hotspot {
+    width: 25px;
+    height: 25px;
+    font-size: 16px;
+  }
+  .inspection-hud {
+    bottom: 200px;
+  }
+  .scene-vignette {
+    box-shadow: inset 0 0 75px #070f1744;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-loading i:after {
+    animation: none;
+    width: 100%;
+  }
+}
