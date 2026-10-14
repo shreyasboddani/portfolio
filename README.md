@@ -1,6 +1,6 @@
-# On My Desk
+# Shreyas Boddani — Portfolio
 
-[Shreyas Boddani’s portfolio](https://shreyasboddani.vercel.app/), told through two connected editions: a guided 3D room and a complete detective-themed webpage. Both follow the same facts, portrait, projects, and resume. An authored Blender model contains the solid walnut desk, metal legs and drawers, freestanding portrait, hinged folders, hollow ceramic mug, articulated lamp, notebook, plant, bookshelves, and divided window. Three.js renders the GLB with physical materials, lights, shadows, and a perspective camera.
+[Shreyas Boddani’s portfolio](https://shreyasboddani.vercel.app/), told through two connected editions: a guided 3D room and a complete detective-themed webpage. Both follow the same facts, portrait, projects, and resume. An authored Blender model contains the solid walnut desk, metal legs and drawers, freestanding portrait, hinged folders, hollow ceramic mug, articulated lamp, notebook, plant, bookshelves, and divided window. Three.js renders the GLB with physical materials, lights, shadows, and a perspective camera. The interface and social previews use Shreyas Boddani as the site name; “on-my-desk” is only the local name of the 3D model files.
 
 ## Run
 

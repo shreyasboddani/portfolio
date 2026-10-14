@@ -189,7 +189,7 @@ export default function StoryWebsite({ onSwitch }) {
         <a href="#person" className="web-brand">
           <FileSearch size={24} />
           <span>
-            ON MY DESK<small>SHREYAS BODDANI / THE WEB EDITION</small>
+            SHREYAS BODDANI<small>THE PORTFOLIO / THE WEB EDITION</small>
           </span>
         </a>
         <div>
@@ -506,7 +506,7 @@ export default function StoryWebsite({ onSwitch }) {
         </Chapter>
       </main>
       <footer className="web-footer">
-        <span>SHREYAS BODDANI / ON MY DESK</span>
+        <span>SHREYAS BODDANI / THE STORY SO FAR</span>
         <span className="handwritten">Thanks for following the thread.</span>
         <a href="#person">Back to the beginning ↑</a>
       </footer>

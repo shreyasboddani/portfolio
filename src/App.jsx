@@ -118,7 +118,7 @@ export default function App() {
             }}
           >
             <div className="transfer-folder-tab">
-              ON MY DESK / SAME STORY, A NEW PERSPECTIVE
+              SHREYAS BODDANI / THE SAME STORY, A NEW PERSPECTIVE
             </div>
             <FileSearch size={38} strokeWidth={1.2} />
             <p>

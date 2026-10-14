@@ -471,12 +471,12 @@ export default function CaseFile({
     >
       <div className="case-folder">
         <div className="folder-cover" aria-hidden="true">
-          <span>ON MY DESK / SHREYAS BODDANI</span>
+          <span>SHREYAS BODDANI / PERSONAL CASE FILES</span>
           <strong>{file?.label || "A little bit of everything."}</strong>
           <i>OPEN. GET CURIOUS.</i>
           <small>{file?.code || "INDEX"} / NOTES & THINGS</small>
         </div>
-        <div className="folder-tab">ON MY DESK / SHREYAS BODDANI</div>
+        <div className="folder-tab">SHREYAS BODDANI / PERSONAL CASE FILES</div>
         <div className="case-file-header">
           <div>
             <p className="file-kicker">

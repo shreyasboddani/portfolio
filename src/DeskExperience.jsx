@@ -184,7 +184,7 @@ export default function DeskExperience({ onSwitch }) {
         className={`investigation mode-${mode} ${prologue && mode === "story" ? "is-prologue" : ""} ${opening ? "is-inspecting" : ""}`}
         tabIndex={-1}
       >
-        <h1 className="sr-only">On My Desk — Shreyas Boddani</h1>
+        <h1 className="sr-only">Shreyas Boddani — Interactive Portfolio</h1>
         <section
           ref={stage}
           className="scroll-stage"
@@ -213,8 +213,8 @@ export default function DeskExperience({ onSwitch }) {
               >
                 <FileSearch size={25} />
                 <span>
-                  ON MY DESK
-                  <small>SHREYAS BODDANI / A PERSONAL PORTFOLIO</small>
+                  SHREYAS BODDANI
+                  <small>THE INTERACTIVE PORTFOLIO</small>
                 </span>
               </a>
               <span className="header-case">
@@ -255,7 +255,7 @@ export default function DeskExperience({ onSwitch }) {
               {renderStatus === "loading" && (
                 <div className="scene-loading" role="status">
                   <img src="/shreyas-headshot.png" alt="Shreyas Boddani" />
-                  <p>ON MY DESK</p>
+                  <p>SHREYAS BODDANI</p>
                   <span>GETTING THINGS READY</span>
                   <i />
                 </div>
