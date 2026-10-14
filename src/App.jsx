@@ -12,9 +12,9 @@ import "./StoryTransition.css";
 const DeskExperience = lazy(() => import("./DeskExperience"));
 const StoryWebsite = lazy(() => import("./StoryWebsite"));
 const getView = () =>
-  new URLSearchParams(window.location.search).get("view") === "web"
-    ? "web"
-    : "desk";
+  new URLSearchParams(window.location.search).get("view") === "desk"
+    ? "desk"
+    : "web";
 
 export default function App() {
   const reduced = useReducedMotion();

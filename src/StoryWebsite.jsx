@@ -11,11 +11,19 @@ import {
   Download,
   FileSearch,
   Fingerprint,
+  ChevronDown,
+  Orbit,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import ExperienceSwitch from "./ExperienceSwitch";
 import { FileContent } from "./CaseFile";
 import { EXPERIENCE, PROJECTS, RESUME } from "./caseData";
+import SkillsBoard, { JourneyNotes } from "./SkillsBoard";
+import { BUILD_NOTES } from "./portfolioNotes";
+import useDeskAudio from "./useDeskAudio";
 import "./StoryWebsite.css";
+import "./WebAdditions.css";
 
 const CHAPTERS = [
   ["person", "The person"],
@@ -34,7 +42,7 @@ function Reveal({ children, className = "" }) {
       className={className}
       initial={reduced ? false : { opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.12 }}
+      viewport={{ once: true, amount: "some" }}
       transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}
@@ -64,10 +72,11 @@ function Chapter({ id, number, eyebrow, title, lead, children, dark = false }) {
   );
 }
 
-function Project({ project, index }) {
+function Project({ project, index, onPaper }) {
+  const notes = BUILD_NOTES[index];
   return (
     <Reveal className={`web-project ${index < 2 ? "featured-project" : ""}`}>
-      <article>
+      <article id={`project-${index}`}>
         <div className="project-folder-tab">
           EXHIBIT {String(index + 1).padStart(2, "0")}
         </div>
@@ -98,6 +107,24 @@ function Project({ project, index }) {
               {project.link} <ArrowUpRight size={16} />
             </a>
           )}
+          <details
+            className="build-notes"
+            onToggle={(event) => {
+              if (event.currentTarget.open) onPaper();
+            }}
+          >
+            <summary>
+              Inside the build <ChevronDown size={15} aria-hidden="true" />
+            </summary>
+            <dl>
+              {[0, 2, 4].map((i) => (
+                <div key={notes[i]}>
+                  <dt>{notes[i]}</dt>
+                  <dd>{notes[i + 1]}</dd>
+                </div>
+              ))}
+            </dl>
+          </details>
         </div>
       </article>
     </Reveal>
@@ -108,26 +135,53 @@ export default function StoryWebsite({ onSwitch }) {
   const reduced = useReducedMotion();
   const main = useRef(null);
   const [active, setActive] = useState("person");
+  const audio = useDeskAudio();
+  const chapterIndex = CHAPTERS.findIndex(([id]) => id === active);
+  const onPaper = () => audio.play("page");
   const { scrollYProgress } = useScroll({
     target: main,
     offset: ["start start", "end end"],
   });
   const portraitY = useTransform(scrollYProgress, [0, 0.12], [0, -75]);
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries)
-          if (entry.isIntersecting) setActive(entry.target.id);
-      },
-      { rootMargin: "-12% 0px -65% 0px", threshold: 0 },
-    );
-    main.current
-      .querySelectorAll("section[id]")
-      .forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
+    const sections = [
+      ...main.current.querySelectorAll(".web-hero, .web-chapter"),
+    ];
+    let frame;
+    let disposed = false;
+    const measure = () => {
+      if (disposed) return;
+      let current = "person";
+      const edge = window.innerWidth <= 760 ? 160 : 210;
+      for (const section of sections)
+        if (section.getBoundingClientRect().top <= edge) current = section.id;
+      setActive(current);
+    };
+    const schedule = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    };
+    const observer = new ResizeObserver(schedule);
+    observer.observe(main.current);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    document.fonts.ready.then(schedule);
+    schedule();
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
   }, []);
   return (
     <div className="web-edition">
+      <div className="web-atmosphere" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </div>
       <a className="skip-link" href="#projects">
         Skip to projects
       </a>
@@ -169,6 +223,7 @@ export default function StoryWebsite({ onSwitch }) {
       </nav>
       <main ref={main} tabIndex={-1} id="web-story">
         <section className="web-hero" id="person">
+          <div className="hero-lamplight" aria-hidden="true" />
           <svg
             className="hero-thread"
             viewBox="0 0 1400 800"
@@ -221,6 +276,21 @@ export default function StoryWebsite({ onSwitch }) {
               <p className="hero-margin-note handwritten">
                 A few things made it out of my notebook.
               </p>
+              <div className="hero-extra-links">
+                <a href="#skills">
+                  My toolkit <ArrowUpRight size={14} />
+                </a>
+                <a href="#journey">
+                  How I got here <ArrowUpRight size={14} />
+                </a>
+              </div>
+              <button className="hero-room-link" onClick={onSwitch}>
+                <Orbit size={17} />
+                <span>
+                  Want to look around?<small>Enter the optional 3D room</small>
+                </span>
+                <ArrowUpRight size={16} />
+              </button>
             </Motion.div>
           </div>
           <Motion.div
@@ -300,7 +370,12 @@ export default function StoryWebsite({ onSwitch }) {
           </div>
           <div className="web-project-grid">
             {PROJECTS.map((project, index) => (
-              <Project key={project.name} project={project} index={index} />
+              <Project
+                key={project.name}
+                project={project}
+                index={index}
+                onPaper={onPaper}
+              />
             ))}
           </div>
         </Chapter>
@@ -391,9 +466,13 @@ export default function StoryWebsite({ onSwitch }) {
           }
           lead="The coursework, tools, and moments behind the work. There’s a lot left to learn."
         >
+          <SkillsBoard onPaper={onPaper} />
+          <JourneyNotes onPaper={onPaper} />
           <div className="web-file-content web-background">
-            <FileContent id="education" />
-            <div className="web-record">
+            <div id="education-notes">
+              <FileContent id="education" />
+            </div>
+            <div className="web-record" id="recognition-notes">
               <h3 className="record-heading">A few notes for the record.</h3>
               <FileContent id="recognition" />
             </div>
@@ -431,6 +510,38 @@ export default function StoryWebsite({ onSwitch }) {
         <span className="handwritten">Thanks for following the thread.</span>
         <a href="#person">Back to the beginning ↑</a>
       </footer>
+      <div className="web-thread-status" aria-hidden="true">
+        <span className="thread-status-dot" />
+        <span>
+          FOLLOWING THE THREAD
+          <small>
+            0{chapterIndex + 1} / 07 · {CHAPTERS[chapterIndex][1]}
+          </small>
+        </span>
+      </div>
+      <button
+        className="web-ambience"
+        onClick={audio.toggle}
+        aria-pressed={audio.enabled}
+        aria-label={audio.enabled ? "Turn ambience off" : "Turn ambience on"}
+        title="Quiet rain outside the desk. Sound is optional."
+      >
+        {audio.enabled ? <Volume2 size={17} /> : <VolumeX size={17} />}
+        <span>
+          Ambience {audio.enabled ? "on" : "off"}
+          <small>
+            {audio.enabled ? "RAIN AT THE WINDOW" : "QUIET RAIN · OPTIONAL"}
+          </small>
+        </span>
+        <i
+          className={audio.enabled ? "ambience-playing" : ""}
+          aria-hidden="true"
+        >
+          <b />
+          <b />
+          <b />
+        </i>
+      </button>
     </div>
   );
 }
